@@ -38,19 +38,43 @@ function loadSection(section){
 
     if(section === "uniplace"){
 
-        content.innerHTML = `
-            <div class="section-page">
+content.innerHTML=`
 
-                <h2>¿Qué es UniPlace?</h2>
+<div class="section-page">
 
-                <p>
-                UniPlace es una plataforma impulsada por inteligencia artificial
-                diseñada para conectar estudiantes, docentes y negocios locales
-                mediante recomendaciones personalizadas.
-                </p>
+<h2>¿Cómo Funciona?</h2>
 
-            </div>
-        `;
+<div class="steps">
+
+<div class="step">
+
+<h3>1</h3>
+
+<p>Describe tu necesidad.</p>
+
+</div>
+
+<div class="step">
+
+<h3>2</h3>
+
+<p>La IA analiza la solicitud.</p>
+
+</div>
+
+<div class="step">
+
+<h3>3</h3>
+
+<p>Obtén recomendaciones.</p>
+
+</div>
+
+</div>
+
+</div>
+
+`;
     }
 
     if(section === "funciona"){
@@ -87,19 +111,41 @@ function loadSection(section){
 
     if(section === "autores"){
 
-        content.innerHTML = `
-            <div class="section-page">
+content.innerHTML = `
 
-                <h2>Autores</h2>
+<div class="section-page">
 
-                <p>
-                Aquí podrás mostrar los integrantes del proyecto,
-                fotografías y enlaces profesionales.
-                </p>
+<h2>Autores</h2>
 
-            </div>
-        `;
-    }
+<div class="author-grid">
+
+<div class="author-card">
+
+<img src="../assets/autores/autor1.jpg">
+
+<h3>Nombre Completo</h3>
+
+<p>Desarrollador Frontend</p>
+
+</div>
+
+<div class="author-card">
+
+<img src="../assets/autores/autor2.jpg">
+
+<h3>Nombre Completo</h3>
+
+<p>Desarrollador Backend</p>
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+}
 
     if(section === "terminos"){
 
@@ -161,4 +207,53 @@ function sendMessage(){
 
     input.value = "";
 
+}
+
+let chatCounter = 1;
+
+function createNewChat(){
+
+    chatCounter++;
+
+    const chatList = document.getElementById("chatList");
+
+    const chat = document.createElement("div");
+
+    chat.classList.add("chat-item");
+
+    chat.textContent = `Conversación ${chatCounter}`;
+
+    chatList.prepend(chat);
+
+}
+document
+.getElementById("newChatBtn")
+.addEventListener("click",()=>{
+
+    createNewChat();
+
+    loadChatHome();
+
+});
+function loadChatHome(){
+
+    content.innerHTML = `
+
+        <div class="chat-home">
+
+            <div class="hero-center">
+
+                <h1>UniPlace</h1>
+
+                <p>
+                    ¿Qué necesitas encontrar hoy?
+                </p>
+
+            </div>
+
+            <div id="messages"></div>
+
+        </div>
+
+    `;
 }
