@@ -2,6 +2,7 @@
 <html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -9,8 +10,10 @@
 
     <link rel="stylesheet" href="../css/dashboard.css">
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+
 </head>
 
 <body>
@@ -21,11 +24,19 @@
 
         <aside class="sidebar" id="sidebar">
 
-            <div class="sidebar-header">
+            <div class="sidebar-top">
 
-                <img src="../assets/icon.png" alt="UniPlace">
-                
+                <div class="brand">
 
+                    <img
+                        src="../assets/icon.png"
+                        alt="UniPlace">
+
+                    <h2 class="brand-name">
+                        UniPlace
+                    </h2>
+
+                </div>
 
                 <button id="toggleSidebar">
                     ☰
@@ -33,113 +44,131 @@
 
             </div>
 
-            <nav>
+            <div class="menu-section">
 
                 <ul>
 
-                    <li id="newChatBtn">
-                        <span class="menu-text">Nuevo chat</span>
+                    <li id="newChatBtn" class="active">
+
+                        <span class="menu-text">
+                            Nuevo Chat
+                        </span>
+
                     </li>
 
                     <li data-section="uniplace">
-                        <span class="menu-text">¿Qué es UniPlace?</span>
+
+                        <span class="menu-text">
+                            ¿Qué es UniPlace?
+                        </span>
+
                     </li>
 
                     <li data-section="funciona">
-                        <span class="menu-text">¿Cómo funciona?</span>
+
+                        <span class="menu-text">
+                            ¿Cómo Funciona?
+                        </span>
+
                     </li>
 
                     <li data-section="nosotros">
-                        <span class="menu-text">Quiénes Somos</span>
+
+                        <span class="menu-text">
+                            Quiénes Somos
+                        </span>
+
                     </li>
 
                     <li data-section="autores">
-                        <span class="menu-text">Autores</span>
+
+                        <span class="menu-text">
+                            Autores
+                        </span>
+
                     </li>
 
                     <li data-section="terminos">
-                        <span class="menu-text">Términos</span>
+
+                        <span class="menu-text">
+                            Términos
+                        </span>
+
                     </li>
 
                 </ul>
 
-            </nav>
+            </div>
+
             <div class="chat-history">
 
-    <h3>Conversaciones</h3>
+                <h3 class="history-title">
+                    Conversaciones
+                </h3>
 
-    <div id="chatList">
+                <div id="chatList">
 
-        <div class="chat-item active-chat">
-            Nueva conversación
-        </div>
+                    <div
+                        class="chat-item active-chat"
+                        id="defaultChat">
 
-    </div>
+                        Nueva conversación
 
-</div>
+                    </div>
+
+                </div>
+
+            </div>
 
         </aside>
 
-        <!-- CONTENIDO -->
+        <!-- CONTENIDO PRINCIPAL -->
 
-<main class="main-content">
+        <main class="main-content">
 
-    <section id="content">
+            <section id="content">
 
-        <div class="chat-home">
+                <div class="chat-home">
 
-            <div class="hero-center">
+                    <div class="hero-center">
 
-                <h1>UniPlace</h1>
+                        <img
+                            src="../assets/icon.png"
+                            class="hero-logo"
+                            alt="UniPlace">
 
-                <p>
-                    ¿Qué necesitas encontrar hoy?
-                </p>
+                        <h1>UniPlace</h1>
+
+                        <p>
+                            ¿Qué necesitas encontrar hoy?
+                        </p>
+
+                    </div>
+
+                    <div id="messages"></div>
+
+                </div>
+
+            </section>
+
+            <!-- BARRA DE CHAT -->
+
+            <div
+                class="chat-bar"
+                id="chatBar">
+
+                <input
+                    type="text"
+                    id="messageInput"
+                    placeholder="Escribe tu consulta...">
+
+                <button id="sendBtn">
+                    →
+                </button>
 
             </div>
 
-            <div class="suggestions">
-
-                <div class="suggestion-card">
-                    Buscar cafeterías cercanas
-                </div>
-
-                <div class="suggestion-card">
-                    Encontrar servicios de impresión
-                </div>
-
-                <div class="suggestion-card">
-                    Buscar tutor académico
-                </div>
-
-                <div class="suggestion-card">
-                    Servicios tecnológicos
-                </div>
-
-            </div>
-
-            <div id="messages">
-
-            </div>
-
-        </div>
-
-    </section>
-
-    <div class="chat-bar">
-
-        <input
-            type="text"
-            id="messageInput"
-            placeholder="Escribe tu consulta...">
-
-        <button id="sendBtn">
-            →
-        </button>
-
-    </div>
-
-</main>
+        </main>
 
     </div>
 
@@ -147,6 +176,4 @@
 
 </body>
 
-
 </html>
-
