@@ -28,6 +28,6 @@ window.addEventListener("click", (e) => {
 document.getElementById("startBtn")
 .addEventListener("click", () => {
 
-    window.location.href = "pages/login.html";
+    window.location.href = "pages/auth.html";
 
 });

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>UniPlace Dashboard</title>
+
+    <link rel="stylesheet" href="../css/dashboard.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- SIDEBAR -->
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-header">
+
+                <img src="../assets/icon.png" alt="UniPlace">
+                
+
+
+                <button id="toggleSidebar">
+                    ☰
+                </button>
+
+            </div>
+
+            <nav>
+
+                <ul>
+
+                    <li data-section="chat">
+                        <span class="menu-text">Nuevo chat</span>
+                    </li>
+
+                    <li data-section="uniplace">
+                        <span class="menu-text">¿Qué es UniPlace?</span>
+                    </li>
+
+                    <li data-section="funciona">
+                        <span class="menu-text">¿Cómo funciona?</span>
+                    </li>
+
+                    <li data-section="nosotros">
+                        <span class="menu-text">Quiénes Somos</span>
+                    </li>
+
+                    <li data-section="autores">
+                        <span class="menu-text">Autores</span>
+                    </li>
+
+                    <li data-section="terminos">
+                        <span class="menu-text">Términos</span>
+                    </li>
+
+                </ul>
+
+            </nav>
+
+        </aside>
+
+        <!-- CONTENIDO -->
+
+<main class="main-content">
+
+    <section id="content">
+
+        <div class="chat-home">
+
+            <div class="hero-center">
+
+                <h1>UniPlace</h1>
+
+                <p>
+                    ¿Qué necesitas encontrar hoy?
+                </p>
+
+            </div>
+
+            <div class="suggestions">
+
+                <div class="suggestion-card">
+                    Buscar cafeterías cercanas
+                </div>
+
+                <div class="suggestion-card">
+                    Encontrar servicios de impresión
+                </div>
+
+                <div class="suggestion-card">
+                    Buscar tutor académico
+                </div>
+
+                <div class="suggestion-card">
+                    Servicios tecnológicos
+                </div>
+
+            </div>
+
+            <div id="messages">
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <div class="chat-bar">
+
+        <input
+            type="text"
+            id="messageInput"
+            placeholder="Escribe tu consulta...">
+
+        <button id="sendBtn">
+            →
+        </button>
+
+    </div>
+
+</main>
+
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+
+</body>
+
+</html>
