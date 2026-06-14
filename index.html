@@ -1,105 +1,75 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>UniPlace</title>
-
     <link rel="stylesheet" href="css/style.css">
-
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
 
     <div class="background-glow"></div>
 
     <main class="hero">
-
         <div class="hero-content">
-
             <img src="assets/logo-blanco.png" alt="UniPlace Logo" class="logo">
-
             <h1>Bienvenido a UniPlace</h1>
-
-            <p>
-                La plataforma inteligente que conecta estudiantes,
-                profesores y negocios locales.
-            </p>
-
-            <button id="startBtn">
-                Comenzar
-            </button>
-
+            <p>La plataforma inteligente que conecta estudiantes, profesores y negocios locales.</p>
+            <button id="startBtn" class="hero-btn">Comenzar</button>
         </div>
-
     </main>
 
     <footer>
-
         <span>© 2026 UniPlace</span>
-
         <div class="footer-links">
-
-            <a href="#" id="termsBtn">
-                Términos de Uso
-            </a>
-
-            <a href="#">
-                Privacidad
-            </a>
-
-            <a href="#">
-                Uso Ético IA
-            </a>
-
+            <a href="#" id="termsBtn">Términos de Uso</a>
+            <a href="#" id="privacyBtn">Privacidad</a>
+            <a href="#" id="ethicsBtn">Uso Ético IA</a>
         </div>
-
     </footer>
 
+    <!-- Modal Términos -->
     <div class="modal" id="termsModal">
-
         <div class="modal-content">
-
             <h2>Términos y Condiciones</h2>
-
             <div class="terms-text">
-
-                <p>
-                    UniPlace utiliza inteligencia artificial para generar
-                    recomendaciones y sugerencias informativas.
-                </p>
-
-                <p>
-                    Los resultados proporcionados no garantizan la disponibilidad,
-                    calidad o exactitud absoluta de los servicios recomendados.
-                </p>
-
-                <p>
-                    El usuario es responsable de verificar la información antes
-                    de tomar decisiones basadas en las recomendaciones generadas.
-                </p>
-
-                <p>
-                    Está prohibido utilizar la plataforma para actividades
-                    ilegales, fraudulentas o que vulneren los derechos de terceros.
-                </p>
-
+                <p>UniPlace utiliza inteligencia artificial para generar recomendaciones y sugerencias informativas.</p>
+                <p>Los resultados proporcionados no garantizan la disponibilidad, calidad o exactitud absoluta de los servicios recomendados.</p>
+                <p>El usuario es responsable de verificar la información antes de tomar decisiones basadas en las recomendaciones generadas.</p>
+                <p>Está prohibido utilizar la plataforma para actividades ilegales, fraudulentas o que vulneren los derechos de terceros.</p>
+                <p>El contenido generado por la plataforma es solo con fines educativos e informativos y no reemplaza asesoramiento profesional.</p>
+                <p>UniPlace se reserva el derecho de modificar, actualizar o eliminar información sin previo aviso.</p>
             </div>
-
-            <button id="closeModal">
-                Entendido
-            </button>
-
+            <button id="closeModal" class="hero-btn">Entendido</button>
         </div>
+    </div>
 
+    <!-- Modal Privacidad -->
+    <div class="modal" id="privacyModal">
+        <div class="modal-content">
+            <h2>Política de Privacidad</h2>
+            <div class="terms-text">
+                <p>UniPlace respeta tu privacidad. Los datos proporcionados son almacenados de forma segura y no se comparten con terceros sin consentimiento.</p>
+                <p>Solo se recopilan datos necesarios para el funcionamiento de la plataforma y la mejora de la experiencia de usuario.</p>
+            </div>
+            <button class="hero-btn" id="closePrivacy">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Modal Uso Ético -->
+    <div class="modal" id="ethicsModal">
+        <div class="modal-content">
+            <h2>Uso Ético de la IA</h2>
+            <div class="terms-text">
+                <p>Los usuarios deben emplear UniPlace de forma responsable, evitando cualquier uso que pueda causar daño o vulnerar derechos de terceros.</p>
+                <p>La plataforma promueve un uso transparente y ético de la inteligencia artificial.</p>
+            </div>
+            <button class="hero-btn" id="closeEthics">Entendido</button>
+        </div>
     </div>
 
     <script src="js/app.js"></script>
-
 </body>
-
 </html>

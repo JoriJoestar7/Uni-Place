@@ -1,33 +1,21 @@
-const modal = document.getElementById("termsModal");
+const termsModal = document.getElementById("termsModal");
+const privacyModal = document.getElementById("privacyModal");
+const ethicsModal = document.getElementById("ethicsModal");
 
-const termsBtn = document.getElementById("termsBtn");
+document.getElementById("termsBtn").addEventListener("click", () => termsModal.style.display = "flex");
+document.getElementById("privacyBtn").addEventListener("click", () => privacyModal.style.display = "flex");
+document.getElementById("ethicsBtn").addEventListener("click", () => ethicsModal.style.display = "flex");
 
-const closeBtn = document.getElementById("closeModal");
+document.getElementById("closeModal").addEventListener("click", () => termsModal.style.display = "none");
+document.getElementById("closePrivacy").addEventListener("click", () => privacyModal.style.display = "none");
+document.getElementById("closeEthics").addEventListener("click", () => ethicsModal.style.display = "none");
 
-termsBtn.addEventListener("click", () => {
-
-    modal.style.display = "flex";
-
+window.addEventListener("click", e => {
+    if(e.target === termsModal) termsModal.style.display = "none";
+    if(e.target === privacyModal) privacyModal.style.display = "none";
+    if(e.target === ethicsModal) ethicsModal.style.display = "none";
 });
 
-closeBtn.addEventListener("click", () => {
-
-    modal.style.display = "none";
-
-});
-
-window.addEventListener("click", (e) => {
-
-    if (e.target === modal) {
-
-        modal.style.display = "none";
-    }
-
-});
-
-document.getElementById("startBtn")
-.addEventListener("click", () => {
-
+document.getElementById("startBtn").addEventListener("click", () => {
     window.location.href = "pages/auth.html";
-
 });

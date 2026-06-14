@@ -5,37 +5,38 @@ const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
 
 loginTab.addEventListener("click", () => {
-
     loginTab.classList.add("active");
     registerTab.classList.remove("active");
-
     loginForm.style.display = "flex";
     registerForm.style.display = "none";
-
 });
 
 registerTab.addEventListener("click", () => {
-
     registerTab.classList.add("active");
     loginTab.classList.remove("active");
-
     registerForm.style.display = "flex";
     loginForm.style.display = "none";
-
 });
 
-loginForm.addEventListener("submit", (e) => {
-
+// Validación y redirección
+loginForm.addEventListener("submit", e => {
     e.preventDefault();
-
-    window.location.href = "dashboard.html";
-
+    if(loginForm[0].value && loginForm[1].value){
+        window.location.href = "dashboard.html";
+    } else {
+        alert("Completa todos los campos.");
+    }
 });
 
-registerForm.addEventListener("submit", (e) => {
-
+registerForm.addEventListener("submit", e => {
     e.preventDefault();
-
-    window.location.href = "dashboard.html";
-
+    if(registerForm[0].value && registerForm[1].value && registerForm[2].value && registerForm[3].value){
+        if(registerForm[2].value !== registerForm[3].value){
+            alert("Las contraseñas no coinciden.");
+            return;
+        }
+        window.location.href = "dashboard.html";
+    } else {
+        alert("Completa todos los campos.");
+    }
 });
