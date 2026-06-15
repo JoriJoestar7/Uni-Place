@@ -1,42 +1,99 @@
-const loginTab = document.getElementById("loginTab");
-const registerTab = document.getElementById("registerTab");
+document.addEventListener("DOMContentLoaded", () => {
+    const cursorGlow = document.querySelector(".cursor-glow");
 
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
+    document.addEventListener("mousemove", (event) => {
+        cursorGlow.style.opacity = "1";
+        cursorGlow.style.left = `${event.clientX}px`;
+        cursorGlow.style.top = `${event.clientY}px`;
+    });
 
-loginTab.addEventListener("click", () => {
-    loginTab.classList.add("active");
-    registerTab.classList.remove("active");
-    loginForm.style.display = "flex";
-    registerForm.style.display = "none";
-});
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
 
-registerTab.addEventListener("click", () => {
-    registerTab.classList.add("active");
-    loginTab.classList.remove("active");
-    registerForm.style.display = "flex";
-    loginForm.style.display = "none";
-});
+    const loginMessage = document.getElementById("loginMessage");
+    const registerMessage = document.getElementById("registerMessage");
 
-// Validación y redirección
-loginForm.addEventListener("submit", e => {
-    e.preventDefault();
-    if(loginForm[0].value && loginForm[1].value){
-        window.location.href = "dashboard.html";
-    } else {
-        alert("Completa todos los campos.");
-    }
-});
+    tabButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const selectedTab = button.dataset.tab;
 
-registerForm.addEventListener("submit", e => {
-    e.preventDefault();
-    if(registerForm[0].value && registerForm[1].value && registerForm[2].value && registerForm[3].value){
-        if(registerForm[2].value !== registerForm[3].value){
-            alert("Las contraseñas no coinciden.");
+            tabButtons.forEach((btn) => btn.classList.remove("active"));
+            button.classList.add("active");
+
+            if (selectedTab === "login") {
+                loginForm.classList.remove("hidden");
+                registerForm.classList.add("hidden");
+            } else {
+                registerForm.classList.remove("hidden");
+                loginForm.classList.add("hidden");
+            }
+
+            loginMessage.textContent = "";
+            registerMessage.textContent = "";
+        });
+    });
+
+    loginForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value.trim();
+
+        if (!email || !password) {
+            showMessage(loginMessage, "Completa todos los campos para continuar.");
             return;
         }
-        window.location.href = "dashboard.html";
-    } else {
-        alert("Completa todos los campos.");
+
+        localStorage.setItem("uniplace_user", JSON.stringify({
+            email,
+            name: email.split("@")[0]
+        }));
+
+        showMessage(loginMessage, "Acceso correcto. Redirigiendo...", true);
+
+        setTimeout(() => {
+            window.location.href = "dashboard.html";
+        }, 650);
+    });
+
+    registerForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const name = document.getElementById("registerName").value.trim();
+        const email = document.getElementById("registerEmail").value.trim();
+        const password = document.getElementById("registerPassword").value.trim();
+        const confirmPassword = document.getElementById("registerConfirmPassword").value.trim();
+
+        if (!name || !email || !password || !confirmPassword) {
+            showMessage(registerMessage, "Completa todos los campos para crear tu cuenta.");
+            return;
+        }
+
+        if (password.length < 6) {
+            showMessage(registerMessage, "La contraseña debe tener al menos 6 caracteres.");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showMessage(registerMessage, "Las contraseñas no coinciden.");
+            return;
+        }
+
+        localStorage.setItem("uniplace_user", JSON.stringify({
+            name,
+            email
+        }));
+
+        showMessage(registerMessage, "Cuenta creada correctamente. Redirigiendo...", true);
+
+        setTimeout(() => {
+            window.location.href = "dashboard.html";
+        }, 650);
+    });
+
+    function showMessage(element, text, success = false) {
+        element.textContent = text;
+        element.classList.toggle("success", success);
     }
 });

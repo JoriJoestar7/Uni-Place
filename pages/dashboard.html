@@ -1,180 +1,83 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | UniPlace</title>
 
-    <title>UniPlace Dashboard</title>
-
+    <link rel="icon" href="../assets/icon.png">
+    <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard.css">
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap">
 </head>
+<body class="dashboard-body">
 
-<body>
+    <div class="cursor-glow"></div>
+    <div class="page-noise"></div>
 
-    <div class="container">
-
-        <!-- SIDEBAR -->
-
+    <div class="dashboard-layout">
         <aside class="sidebar" id="sidebar">
-
             <div class="sidebar-top">
+                <a href="../index.html" class="sidebar-brand">
+                    <img src="../assets/icon.png" alt="UniPlace">
+                    <span>UniPlace</span>
+                </a>
 
-                <div class="brand">
-
-                    <img
-                        src="../assets/icon.png"
-                        alt="UniPlace">
-
-                    <h2 class="brand-name">
-                        UniPlace
-                    </h2>
-
-                </div>
-
-                <button id="toggleSidebar">
-                    ☰
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <span></span>
+                    <span></span>
                 </button>
-
             </div>
 
-            <div class="menu-section">
+            <button class="new-chat-btn" id="newChatBtn">
+                Nuevo Chat
+            </button>
 
-                <ul>
+            <nav class="sidebar-menu">
+                <button data-template="about">Qué es UniPlace</button>
+                <button data-template="how">Cómo Funciona</button>
+                <button data-template="team">Quiénes Somos</button>
+                <button data-template="authors">Autores</button>
+                <button data-template="terms">Términos</button>
+            </nav>
 
-                    <li id="newChatBtn" class="active">
-
-                        <span class="menu-text">
-                            Nuevo Chat
-                        </span>
-
-                    </li>
-
-                    <li data-section="uniplace">
-
-                        <span class="menu-text">
-                            ¿Qué es UniPlace?
-                        </span>
-
-                    </li>
-
-                    <li data-section="funciona">
-
-                        <span class="menu-text">
-                            ¿Cómo Funciona?
-                        </span>
-
-                    </li>
-
-                    <li data-section="nosotros">
-
-                        <span class="menu-text">
-                            Quiénes Somos
-                        </span>
-
-                    </li>
-
-                    <li data-section="autores">
-
-                        <span class="menu-text">
-                            Autores
-                        </span>
-
-                    </li>
-
-                    <li data-section="terminos">
-
-                        <span class="menu-text">
-                            Términos
-                        </span>
-
-                    </li>
-
-                </ul>
-
+            <div class="conversation-area">
+                <p class="conversation-label">Conversaciones</p>
+                <div class="conversation-list" id="conversationList"></div>
             </div>
-
-            <div class="chat-history">
-
-                <h3 class="history-title">
-                    Conversaciones
-                </h3>
-
-                <div id="chatList">
-
-                    <div
-                        class="chat-item active-chat"
-                        id="defaultChat">
-
-                        Nueva conversación
-
-                    </div>
-
-                </div>
-
-            </div>
-
         </aside>
 
-        <!-- CONTENIDO PRINCIPAL -->
-
-        <main class="main-content">
-
-            <section id="content">
-
-                <div class="chat-home">
-
-                    <div class="hero-center">
-
-                        <img
-                            src="../assets/icon.png"
-                            class="hero-logo"
-                            alt="UniPlace">
-
-                        <h1>UniPlace</h1>
-
-                        <p>
-                            ¿Qué necesitas encontrar hoy?
-                        </p>
-
-                    </div>
-
-                    <div id="messages"></div>
-
+        <main class="chat-shell">
+            <header class="chat-header">
+                <div>
+                    <p>Workspace académico</p>
+                    <h1 id="currentChatTitle">Nuevo Chat</h1>
                 </div>
 
+                <button class="clear-btn" id="clearStorageBtn">
+                    Limpiar
+                </button>
+            </header>
+
+            <section class="chat-window" id="chatWindow">
+                <div class="empty-state" id="emptyState">
+                    <span>UniPlace</span>
+                    <h2>¿Qué necesitas resolver hoy?</h2>
+                    <p>
+                        Pregunta, organiza una idea, estructura una tarea o prepara un tema universitario.
+                    </p>
+                </div>
             </section>
 
-            <!-- BARRA DE CHAT -->
-
-            <div
-                class="chat-bar"
-                id="chatBar">
-
-                <input
-                    type="text"
-                    id="messageInput"
-                    placeholder="Escribe tu consulta...">
-
-                <button id="sendBtn">
-                    →
-                </button>
-
-            </div>
-
+            <form class="chat-composer" id="chatForm">
+                <textarea id="chatInput" rows="1" placeholder="Escribe tu mensaje..."></textarea>
+                <button type="submit">Enviar</button>
+            </form>
         </main>
-
     </div>
 
     <script src="../js/dashboard.js"></script>
-
 </body>
-
 </html>

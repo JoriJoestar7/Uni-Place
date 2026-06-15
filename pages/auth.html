@@ -3,40 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UniPlace | Acceso</title>
+    <title>Acceso | UniPlace</title>
+
+    <link rel="icon" href="../assets/icon.png">
+    <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/auth.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap">
 </head>
-<body>
+<body class="auth-body">
 
-    <div class="background-glow"></div>
+    <div class="cursor-glow"></div>
+    <div class="page-noise"></div>
+    <div class="background-halo halo-one"></div>
+    <div class="background-halo halo-two"></div>
 
-    <section class="auth-container">
-        <div class="auth-card">
-            <img src="../assets/icon.png" alt="UniPlace" class="logo">
+    <main class="auth-wrapper">
+        <section class="auth-card fade-up">
+            <a href="../index.html" class="auth-brand">
+                <img src="../assets/icon.png" alt="Logo UniPlace">
+                <span>UniPlace</span>
+            </a>
 
-            <div class="tabs">
-                <button class="tab active" id="loginTab">Iniciar Sesión</button>
-                <button class="tab" id="registerTab">Registrarse</button>
+            <div class="auth-heading">
+                <p>Acceso académico</p>
+                <h1>Entra a tu espacio</h1>
             </div>
 
-            <form id="loginForm">
-                <input type="email" placeholder="Correo institucional o personal" required>
-                <input type="password" placeholder="Contraseña" required>
-                <button type="submit">Ingresar</button>
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="login">Iniciar sesión</button>
+                <button class="tab-btn" data-tab="register">Registrarse</button>
+            </div>
+
+            <form class="auth-form" id="loginForm">
+                <label>
+                    Correo universitario
+                    <input type="email" id="loginEmail" placeholder="nombre@universidad.edu">
+                </label>
+
+                <label>
+                    Contraseña
+                    <input type="password" id="loginPassword" placeholder="Ingresa tu contraseña">
+                </label>
+
+                <p class="form-message" id="loginMessage"></p>
+
+                <button type="submit" class="auth-submit">
+                    Entrar
+                </button>
             </form>
 
-            <form id="registerForm">
-                <input type="text" placeholder="Nombre completo" required>
-                <input type="email" placeholder="Correo electrónico" required>
-                <input type="password" placeholder="Contraseña" required>
-                <input type="password" placeholder="Confirmar contraseña" required>
-                <button type="submit">Crear cuenta</button>
-            </form>
+            <form class="auth-form hidden" id="registerForm">
+                <label>
+                    Nombre
+                    <input type="text" id="registerName" placeholder="Tu nombre">
+                </label>
 
-        </div>
-    </section>
+                <label>
+                    Correo universitario
+                    <input type="email" id="registerEmail" placeholder="nombre@universidad.edu">
+                </label>
+
+                <label>
+                    Contraseña
+                    <input type="password" id="registerPassword" placeholder="Crea una contraseña">
+                </label>
+
+                <label>
+                    Confirmar contraseña
+                    <input type="password" id="registerConfirmPassword" placeholder="Repite tu contraseña">
+                </label>
+
+                <p class="form-message" id="registerMessage"></p>
+
+                <button type="submit" class="auth-submit">
+                    Crear cuenta
+                </button>
+            </form>
+        </section>
+    </main>
 
     <script src="../js/auth.js"></script>
 </body>

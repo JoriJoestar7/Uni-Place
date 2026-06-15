@@ -1,21 +1,35 @@
-const termsModal = document.getElementById("termsModal");
-const privacyModal = document.getElementById("privacyModal");
-const ethicsModal = document.getElementById("ethicsModal");
+document.addEventListener("DOMContentLoaded", () => {
+    const cursorGlow = document.querySelector(".cursor-glow");
+    const glowTargets = document.querySelectorAll(".glow-target");
+    const heroTitle = document.querySelector(".hero-title");
+    const startBtn = document.getElementById("startBtn");
 
-document.getElementById("termsBtn").addEventListener("click", () => termsModal.style.display = "flex");
-document.getElementById("privacyBtn").addEventListener("click", () => privacyModal.style.display = "flex");
-document.getElementById("ethicsBtn").addEventListener("click", () => ethicsModal.style.display = "flex");
+    if (cursorGlow) {
+        document.addEventListener("mousemove", (event) => {
+            cursorGlow.style.opacity = "1";
+            cursorGlow.style.left = `${event.clientX}px`;
+            cursorGlow.style.top = `${event.clientY}px`;
+        });
+    }
 
-document.getElementById("closeModal").addEventListener("click", () => termsModal.style.display = "none");
-document.getElementById("closePrivacy").addEventListener("click", () => privacyModal.style.display = "none");
-document.getElementById("closeEthics").addEventListener("click", () => ethicsModal.style.display = "none");
+    glowTargets.forEach((target) => {
+        target.addEventListener("mouseenter", () => {
+            cursorGlow?.classList.add("active");
 
-window.addEventListener("click", e => {
-    if(e.target === termsModal) termsModal.style.display = "none";
-    if(e.target === privacyModal) privacyModal.style.display = "none";
-    if(e.target === ethicsModal) ethicsModal.style.display = "none";
-});
+            if (target.classList.contains("hero-title")) {
+                heroTitle?.classList.add("is-glowing");
+            }
+        });
 
-document.getElementById("startBtn").addEventListener("click", () => {
-    window.location.href = "pages/auth.html";
+        target.addEventListener("mouseleave", () => {
+            cursorGlow?.classList.remove("active");
+            heroTitle?.classList.remove("is-glowing");
+        });
+    });
+
+    if (startBtn) {
+        startBtn.addEventListener("click", () => {
+            window.location.href = "pages/auth.html";
+        });
+    }
 });
