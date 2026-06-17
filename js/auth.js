@@ -1,7 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const API_URL = "http://localhost:3000/api";
+
     const cursorGlow = document.querySelector(".cursor-glow");
 
     document.addEventListener("mousemove", (event) => {
+        if (!cursorGlow) return;
+
         cursorGlow.style.opacity = "1";
         cursorGlow.style.left = `${event.clientX}px`;
         cursorGlow.style.top = `${event.clientY}px`;
@@ -34,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    loginForm.addEventListener("submit", (event) => {
+    loginForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
         const email = document.getElementById("loginEmail").value.trim();
@@ -45,23 +49,46 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        localStorage.setItem("uniplace_user", JSON.stringify({
-            email,
-            name: email.split("@")[0]
-        }));
+        try {
+            setLoading(loginForm, true);
 
-        showMessage(loginMessage, "Acceso correcto. Redirigiendo...", true);
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email, password })
+            });
 
-        setTimeout(() => {
-            window.location.href = "dashboard.html";
-        }, 650);
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                showMessage(loginMessage, data.message || "No se pudo iniciar sesión.");
+                return;
+            }
+
+            saveSession(data);
+
+            showMessage(loginMessage, "Acceso correcto. Redirigiendo...", true);
+
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 700);
+
+        } catch (error) {
+            console.error("LOGIN_FRONT_ERROR:", error);
+            showMessage(loginMessage, "No se pudo conectar con el servidor.");
+        } finally {
+            setLoading(loginForm, false);
+        }
     });
 
-    registerForm.addEventListener("submit", (event) => {
+    registerForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
         const name = document.getElementById("registerName").value.trim();
         const email = document.getElementById("registerEmail").value.trim();
+        const role = document.getElementById("registerRole").value;
         const password = document.getElementById("registerPassword").value.trim();
         const confirmPassword = document.getElementById("registerConfirmPassword").value.trim();
 
@@ -80,20 +107,68 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        localStorage.setItem("uniplace_user", JSON.stringify({
-            name,
-            email
-        }));
+        try {
+            setLoading(registerForm, true);
 
-        showMessage(registerMessage, "Cuenta creada correctamente. Redirigiendo...", true);
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password,
+                    role
+                })
+            });
 
-        setTimeout(() => {
-            window.location.href = "dashboard.html";
-        }, 650);
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                showMessage(registerMessage, data.message || "No se pudo crear la cuenta.");
+                return;
+            }
+
+            saveSession(data);
+
+            showMessage(registerMessage, "Cuenta creada correctamente. Redirigiendo...", true);
+
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 700);
+
+        } catch (error) {
+            console.error("REGISTER_FRONT_ERROR:", error);
+            showMessage(registerMessage, "No se pudo conectar con el servidor.");
+        } finally {
+            setLoading(registerForm, false);
+        }
     });
+
+    function saveSession(data) {
+        localStorage.setItem("uniplace_token", data.token);
+        localStorage.setItem("uniplace_user", JSON.stringify(data.user));
+    }
 
     function showMessage(element, text, success = false) {
         element.textContent = text;
         element.classList.toggle("success", success);
+    }
+
+    function setLoading(form, isLoading) {
+        const button = form.querySelector("button[type='submit']");
+
+        if (!button) return;
+
+        button.disabled = isLoading;
+
+        if (form.id === "loginForm") {
+            button.textContent = isLoading ? "Entrando..." : "Entrar";
+        }
+
+        if (form.id === "registerForm") {
+            button.textContent = isLoading ? "Creando cuenta..." : "Crear cuenta";
+        }
     }
 });

@@ -101,7 +101,8 @@
     font-size: 0.72rem;
 }
 
-.auth-form input {
+.auth-form input,
+.auth-form select {
     width: 100%;
     border: 1px solid rgba(255, 255, 255, 0.1);
     outline: none;
@@ -113,9 +114,14 @@
     transition: var(--transition-soft);
 }
 
-.auth-form input:focus {
+.auth-form input:focus,
+.auth-form select:focus {
     border-color: rgba(255, 255, 255, 0.34);
     box-shadow: 0 0 0 4px rgba(0, 5, 92, 0.24);
+}
+.auth-form select option {
+    background: #111827;
+    color: #ffffff;
 }
 
 .form-message {

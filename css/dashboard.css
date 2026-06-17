@@ -343,6 +343,12 @@
     box-shadow: 0 16px 48px rgba(0, 5, 92, 0.46);
 }
 
+.chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 @media (max-width: 860px) {
     .dashboard-layout {
         padding: 0;

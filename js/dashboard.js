@@ -1,4 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const token = localStorage.getItem("uniplace_token");
+const user = localStorage.getItem("uniplace_user");
+
+if (!token || !user) {
+    window.location.href = "auth.html";
+    return;
+}   
     const STORAGE_KEY = "uniplace_conversations";
 
     const cursorGlow = document.querySelector(".cursor-glow");
@@ -11,6 +18,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const chatInput = document.getElementById("chatInput");
     const currentChatTitle = document.getElementById("currentChatTitle");
     const clearStorageBtn = document.getElementById("clearStorageBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("uniplace_token");
+        localStorage.removeItem("uniplace_user");
+        window.location.href = "auth.html";
+    });
+}
     const emptyState = document.getElementById("emptyState");
     const templateButtons = document.querySelectorAll("[data-template]");
 
