@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | UniPlace</title>
+
+    <link rel="icon" href="../assets/icon.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap">
+</head>
+<body class="admin-body">
+
+    <div class="cursor-glow"></div>
+    <div class="page-noise"></div>
+    <div class="background-halo halo-one"></div>
+    <div class="background-halo halo-two"></div>
+
+    <main class="admin-layout">
+        <aside class="admin-sidebar">
+            <a href="../index.html" class="admin-brand">
+                <img src="../assets/icon.png" alt="UniPlace">
+                <span>UniPlace Admin</span>
+            </a>
+
+            <div class="admin-user-card">
+                <p>Administrador</p>
+                <h2 id="adminName">Admin</h2>
+                <span id="adminEmail">admin@uniplace.com</span>
+            </div>
+
+            <nav class="admin-menu">
+                <button class="filter-btn active" data-status="all">Todos</button>
+                <button class="filter-btn" data-status="pending">Pendientes</button>
+                <button class="filter-btn" data-status="approved">Aprobados</button>
+                <button class="filter-btn" data-status="rejected">Rechazados</button>
+                <button class="filter-btn" data-status="hidden">Ocultos</button>
+            </nav>
+
+            <button class="admin-logout" id="logoutBtn">
+                Cerrar sesión
+            </button>
+        </aside>
+
+        <section class="admin-main">
+            <header class="admin-header">
+                <div>
+                    <p>Panel de revisión</p>
+                    <h1>Emprendimientos</h1>
+                </div>
+
+                <button class="admin-refresh" id="refreshBtn">
+                    Actualizar
+                </button>
+            </header>
+
+            <section class="admin-stats">
+                <article>
+                    <span>Pendientes</span>
+                    <strong id="statPending">0</strong>
+                </article>
+
+                <article>
+                    <span>Aprobados</span>
+                    <strong id="statApproved">0</strong>
+                </article>
+
+                <article>
+                    <span>Rechazados</span>
+                    <strong id="statRejected">0</strong>
+                </article>
+
+                <article>
+                    <span>Ocultos</span>
+                    <strong id="statHidden">0</strong>
+                </article>
+            </section>
+
+            <p class="admin-message" id="adminMessage"></p>
+
+            <section class="business-list" id="businessList">
+                <!-- JS render -->
+            </section>
+        </section>
+    </main>
+
+    <script src="../js/admin.js"></script>
+</body>
+</html>

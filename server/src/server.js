@@ -4,14 +4,19 @@ import dotenv from "dotenv";
 import { pool } from "./db.js";
 import authRoutes from "./routes/auth.routes.js";
 import businessRoutes from "./routes/business.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 dotenv.config();
 
 const app = express();
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: [
+        process.env.FRONTEND_URL,
+        "http://127.0.0.1:5500",
+        "http://localhost:5500"
+    ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
@@ -44,6 +49,7 @@ app.get("/api/health", async (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/business", businessRoutes);
+app.use("/api/admin", adminRoutes);
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {

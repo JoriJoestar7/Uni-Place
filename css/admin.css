@@ -1,0 +1,319 @@
+.admin-body {
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.admin-layout {
+    position: relative;
+    z-index: 4;
+    height: 100vh;
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+}
+
+.admin-sidebar {
+    width: 310px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: 28px;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+        rgba(17, 24, 39, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(22px);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+    padding: 22px;
+}
+
+.admin-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    margin-bottom: 28px;
+}
+
+.admin-brand img {
+    width: 36px;
+    height: 36px;
+}
+
+.admin-user-card {
+    padding: 18px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 24px;
+}
+
+.admin-user-card p {
+    color: var(--soft);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.62rem;
+    margin-bottom: 10px;
+}
+
+.admin-user-card h2 {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+}
+
+.admin-user-card span {
+    display: block;
+    color: var(--soft);
+    font-size: 0.68rem;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.admin-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-btn,
+.admin-logout,
+.admin-refresh,
+.status-btn {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--soft);
+    padding: 12px 14px;
+    font-size: 0.72rem;
+    transition: var(--transition-soft);
+}
+
+.filter-btn {
+    text-align: left;
+    border-radius: 16px;
+}
+
+.filter-btn:hover,
+.filter-btn.active,
+.admin-logout:hover,
+.admin-refresh:hover,
+.status-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.admin-logout {
+    margin-top: auto;
+}
+
+.admin-main {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top right, rgba(0, 5, 92, 0.26), transparent 34%),
+        rgba(10, 10, 10, 0.68);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow-y: auto;
+    padding: 28px;
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.admin-header p {
+    color: var(--soft);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-bottom: 10px;
+}
+
+.admin-header h1 {
+    font-family: var(--title-font);
+    font-size: clamp(3rem, 7vw, 5.8rem);
+    font-weight: 400;
+    letter-spacing: -0.08em;
+    line-height: 0.85;
+}
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.admin-stats article {
+    padding: 18px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-stats span {
+    display: block;
+    color: var(--soft);
+    font-size: 0.68rem;
+    margin-bottom: 12px;
+}
+
+.admin-stats strong {
+    font-size: 1.9rem;
+}
+
+.admin-message {
+    min-height: 24px;
+    color: var(--soft);
+    font-size: 0.76rem;
+    margin-bottom: 16px;
+}
+
+.business-list {
+    display: grid;
+    gap: 14px;
+}
+
+.business-card {
+    padding: 22px;
+    border-radius: 24px;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+        rgba(17, 24, 39, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.business-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 16px;
+}
+
+.business-card h2 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+.business-owner {
+    color: var(--soft);
+    font-size: 0.7rem;
+    line-height: 1.6;
+}
+
+.status-badge {
+    height: fit-content;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.business-description {
+    color: var(--soft);
+    line-height: 1.75;
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+}
+
+.business-meta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 16px;
+    margin-bottom: 18px;
+}
+
+.business-meta p {
+    color: var(--soft);
+    font-size: 0.7rem;
+    line-height: 1.6;
+}
+
+.business-meta strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.business-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.status-btn.approve {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.status-btn.reject {
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.status-btn.hide {
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.empty-admin {
+    padding: 42px;
+    border-radius: 24px;
+    text-align: center;
+    color: var(--soft);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 980px) {
+    .admin-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+    }
+
+    .admin-body {
+        overflow-y: auto;
+    }
+
+    .admin-sidebar {
+        width: 100%;
+        height: auto;
+    }
+
+    .admin-main {
+        overflow: visible;
+    }
+
+    .admin-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 620px) {
+    .admin-layout {
+        padding: 0;
+    }
+
+    .admin-sidebar,
+    .admin-main {
+        border-radius: 0;
+    }
+
+    .admin-header,
+    .business-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-stats,
+    .business-meta {
+        grid-template-columns: 1fr;
+    }
+}

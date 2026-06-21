@@ -167,12 +167,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function redirectByRole(user) {
-        if (user.role === "entrepreneur") {
-            window.location.href = "business-register.html";
-            return;
-        }
-
-        window.location.href = "dashboard.html";
+function redirectByRole(user) {
+    if (user.role === "admin") {
+        window.location.href = "admin.html";
+        return;
     }
+
+    if (user.role === "entrepreneur") {
+        window.location.href = "business-register.html";
+        return;
+    }
+
+    window.location.href = "dashboard.html";
+}
 });
