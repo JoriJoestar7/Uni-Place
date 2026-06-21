@@ -1,12 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const token = localStorage.getItem("uniplace_token");
-const user = localStorage.getItem("uniplace_user");
-
-if (!token || !user) {
-    window.location.href = "auth.html";
-    return;
-}   
+    const API_URL = "http://localhost:3000/api";
     const STORAGE_KEY = "uniplace_conversations";
+
+    const token = localStorage.getItem("uniplace_token");
+    const userRaw = localStorage.getItem("uniplace_user");
 
     const cursorGlow = document.querySelector(".cursor-glow");
     const sidebar = document.getElementById("sidebar");
@@ -19,80 +16,252 @@ if (!token || !user) {
     const currentChatTitle = document.getElementById("currentChatTitle");
     const clearStorageBtn = document.getElementById("clearStorageBtn");
     const logoutBtn = document.getElementById("logoutBtn");
-    if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem("uniplace_token");
-        localStorage.removeItem("uniplace_user");
-        window.location.href = "auth.html";
-    });
-}
     const emptyState = document.getElementById("emptyState");
     const templateButtons = document.querySelectorAll("[data-template]");
+    const dashboardUserName = document.getElementById("dashboardUserName");
+    const dashboardUserEmail = document.getElementById("dashboardUserEmail");
+    const dashboardUserRole = document.getElementById("dashboardUserRole");
+    const dashboardBusinessMini = document.getElementById("dashboardBusinessMini");
+    const dashboardBusinessName = document.getElementById("dashboardBusinessName");
+    const dashboardBusinessStatus = document.getElementById("dashboardBusinessStatus");
 
-    let conversations = loadConversations();
-    let activeConversationId = conversations[0]?.id || null;
+    let currentUser = null;
+    let currentBusiness = null;
 
-    document.addEventListener("mousemove", (event) => {
-        cursorGlow.style.opacity = "1";
-        cursorGlow.style.left = `${event.clientX}px`;
-        cursorGlow.style.top = `${event.clientY}px`;
-    });
+    let conversations = [];
+    let activeConversationId = null;
 
-    sidebarToggle.addEventListener("click", () => {
-        sidebar.classList.toggle("collapsed");
-    });
+    startDashboard();
 
-    newChatBtn.addEventListener("click", () => {
-        createConversation();
-    });
+async function startDashboard() {
+    const canEnter = await validateDashboardAccess();
 
-    clearStorageBtn.addEventListener("click", () => {
-        const confirmed = confirm("¿Quieres eliminar todas las conversaciones guardadas?");
+    if (!canEnter) return;
 
-        if (!confirmed) return;
+    conversations = loadConversations();
+    activeConversationId = conversations[0]?.id || null;
 
-        conversations = [];
-        activeConversationId = null;
-        saveConversations();
-        renderConversationList();
-        renderMessages();
-    });
+    if (!activeConversationId) {
+        createConversation(false);
+    }
 
-    chatForm.addEventListener("submit", (event) => {
-        event.preventDefault();
+    renderUserPanel();
+    setupEvents();
+    renderConversationList();
+    renderMessages();
+}
 
-        const text = chatInput.value.trim();
-
-        if (!text) return;
-
-        if (!activeConversationId) {
-            createConversation(false);
+    async function validateDashboardAccess() {
+        if (!token || !userRaw) {
+            redirectToAuth();
+            return false;
         }
 
-        addMessage("user", text);
-        chatInput.value = "";
-        autoResizeTextarea();
-
-        setTimeout(() => {
-            addMessage("assistant", generateAssistantResponse(text));
-        }, 450);
-    });
-
-    chatInput.addEventListener("input", autoResizeTextarea);
-
-    chatInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            chatForm.requestSubmit();
+        try {
+            currentUser = JSON.parse(userRaw);
+        } catch {
+            redirectToAuth();
+            return false;
         }
-    });
 
-    templateButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-            const template = button.dataset.template;
-            openTemplateMessage(template);
+        try {
+            const response = await fetch(`${API_URL}/auth/me`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                redirectToAuth();
+                return false;
+            }
+
+            currentUser = data.user;
+
+            localStorage.setItem("uniplace_user", JSON.stringify(currentUser));
+
+            if (currentUser.role === "admin") {
+                window.location.href = "admin.html";
+                return false;
+            }
+
+            if (currentUser.role === "entrepreneur") {
+                const hasBusiness = await validateEntrepreneurBusiness();
+
+                if (!hasBusiness) {
+                    return false;
+                }
+            }
+
+            if (!["student", "entrepreneur"].includes(currentUser.role)) {
+                redirectToAuth();
+                return false;
+            }
+
+            return true;
+
+        } catch (error) {
+            console.error("DASHBOARD_ACCESS_ERROR:", error);
+            redirectToAuth();
+            return false;
+        }
+    }
+
+    async function validateEntrepreneurBusiness() {
+        try {
+            const response = await fetch(`${API_URL}/business/me`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 404) {
+                window.location.href = "business-register.html";
+                return false;
+            }
+
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                window.location.href = "business-register.html";
+                return false;
+            }
+
+            currentBusiness = data.business;
+            return true;
+
+        } catch (error) {
+            console.error("ENTREPRENEUR_BUSINESS_CHECK_ERROR:", error);
+            window.location.href = "business-register.html";
+            return false;
+        }
+    }
+function renderUserPanel() {
+    if (!currentUser) return;
+
+    if (dashboardUserName) {
+        dashboardUserName.textContent = currentUser.name || "Usuario";
+    }
+
+    if (dashboardUserEmail) {
+        dashboardUserEmail.textContent = currentUser.email || "";
+    }
+
+    if (dashboardUserRole) {
+        const roleLabels = {
+            student: "Estudiante",
+            entrepreneur: "Emprendimiento",
+            admin: "Administrador"
+        };
+
+        dashboardUserRole.textContent = roleLabels[currentUser.role] || currentUser.role;
+    }
+
+    if (currentUser.role === "entrepreneur" && currentBusiness) {
+        dashboardBusinessMini?.classList.remove("hidden");
+
+        if (dashboardBusinessName) {
+            dashboardBusinessName.textContent = currentBusiness.business_name || "Mi emprendimiento";
+        }
+
+        if (dashboardBusinessStatus) {
+            const statusLabels = {
+                pending: "Pendiente",
+                approved: "Aprobado",
+                rejected: "Rechazado",
+                hidden: "Oculto"
+            };
+
+            dashboardBusinessStatus.textContent = statusLabels[currentBusiness.status] || currentBusiness.status;
+        }
+    } else {
+        dashboardBusinessMini?.classList.add("hidden");
+    }
+}
+    function setupEvents() {
+        document.addEventListener("mousemove", (event) => {
+            if (!cursorGlow) return;
+
+            cursorGlow.style.opacity = "1";
+            cursorGlow.style.left = `${event.clientX}px`;
+            cursorGlow.style.top = `${event.clientY}px`;
         });
-    });
+
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener("click", () => {
+                sidebar.classList.toggle("collapsed");
+            });
+        }
+
+        if (newChatBtn) {
+            newChatBtn.addEventListener("click", () => {
+                createConversation();
+            });
+        }
+
+        if (clearStorageBtn) {
+            clearStorageBtn.addEventListener("click", () => {
+                const confirmed = confirm("¿Quieres eliminar todas las conversaciones guardadas?");
+
+                if (!confirmed) return;
+
+                conversations = [];
+                activeConversationId = null;
+                saveConversations();
+                createConversation(false);
+                renderConversationList();
+                renderMessages();
+            });
+        }
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", logout);
+        }
+
+        if (chatForm) {
+            chatForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+
+                const text = chatInput.value.trim();
+
+                if (!text) return;
+
+                if (!activeConversationId) {
+                    createConversation(false);
+                }
+
+                addMessage("user", text);
+                chatInput.value = "";
+                autoResizeTextarea();
+
+                setTimeout(() => {
+                    addMessage("assistant", generateAssistantResponse(text));
+                }, 450);
+            });
+        }
+
+        if (chatInput) {
+            chatInput.addEventListener("input", autoResizeTextarea);
+
+            chatInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    chatForm.requestSubmit();
+                }
+            });
+        }
+
+        templateButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                const template = button.dataset.template;
+                openTemplateMessage(template);
+            });
+        });
+    }
 
     function createConversation(render = true) {
         const conversation = {
@@ -110,7 +279,7 @@ if (!token || !user) {
         if (render) {
             renderConversationList();
             renderMessages();
-            chatInput.focus();
+            chatInput?.focus();
         }
     }
 
@@ -139,6 +308,8 @@ if (!token || !user) {
     }
 
     function renderConversationList() {
+        if (!conversationList) return;
+
         conversationList.innerHTML = "";
 
         conversations.forEach((conversation) => {
@@ -163,15 +334,28 @@ if (!token || !user) {
     function renderMessages() {
         const conversation = getActiveConversation();
 
+        if (!chatWindow) return;
+
         chatWindow.innerHTML = "";
 
+        renderUserStatusBanner();
+
         if (!conversation || conversation.messages.length === 0) {
-            chatWindow.appendChild(emptyState);
-            currentChatTitle.textContent = "Nuevo Chat";
+            if (emptyState) {
+                updateEmptyState();
+                chatWindow.appendChild(emptyState);
+            }
+
+            if (currentChatTitle) {
+                currentChatTitle.textContent = "Nuevo Chat";
+            }
+
             return;
         }
 
-        currentChatTitle.textContent = conversation.title;
+        if (currentChatTitle) {
+            currentChatTitle.textContent = conversation.title;
+        }
 
         conversation.messages.forEach((message) => {
             const messageElement = document.createElement("div");
@@ -186,6 +370,78 @@ if (!token || !user) {
         });
 
         chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function renderUserStatusBanner() {
+        if (!currentUser) return;
+
+        if (currentUser.role !== "entrepreneur" || !currentBusiness) return;
+
+        const banner = document.createElement("section");
+        banner.className = `dashboard-status-banner status-${currentBusiness.status}`;
+
+        const content = getBusinessStatusContent(currentBusiness);
+
+        banner.innerHTML = `
+            <div>
+                <span>${content.label}</span>
+                <h2>${content.title}</h2>
+                <p>${content.text}</p>
+            </div>
+        `;
+
+        chatWindow.appendChild(banner);
+    }
+
+    function getBusinessStatusContent(business) {
+        const businessName = business.business_name || "tu emprendimiento";
+
+        const statusContent = {
+            pending: {
+                label: "Emprendimiento en revisión",
+                title: `${businessName} está pendiente de aprobación`,
+                text: "Puedes usar UniPlace con normalidad, pero tu emprendimiento todavía no será visible para recomendaciones hasta que un administrador lo apruebe."
+            },
+            approved: {
+                label: "Emprendimiento aprobado",
+                title: `${businessName} ya está aprobado`,
+                text: "Tu emprendimiento ya puede formar parte de las recomendaciones y futuras respuestas inteligentes de UniPlace."
+            },
+            rejected: {
+                label: "Emprendimiento rechazado",
+                title: `${businessName} fue rechazado`,
+                text: "Tu emprendimiento no será visible por ahora. Más adelante podemos crear una opción para editar la información y solicitar una nueva revisión."
+            },
+            hidden: {
+                label: "Emprendimiento oculto",
+                title: `${businessName} está oculto`,
+                text: "El emprendimiento existe en la base de datos, pero no está visible para estudiantes ni para futuras recomendaciones."
+            }
+        };
+
+        return statusContent[business.status] || {
+            label: "Estado del emprendimiento",
+            title: businessName,
+            text: "No se pudo identificar el estado actual del emprendimiento."
+        };
+    }
+
+    function updateEmptyState() {
+        if (!emptyState) return;
+
+        const title = emptyState.querySelector("h2");
+        const paragraph = emptyState.querySelector("p");
+
+        if (!title || !paragraph) return;
+
+        if (currentUser?.role === "entrepreneur" && currentBusiness) {
+            title.textContent = `Hola, ${currentUser.name}`;
+            paragraph.textContent = "Puedes conversar con UniPlace, organizar ideas y preparar información académica. El estado de tu emprendimiento aparece arriba.";
+            return;
+        }
+
+        title.textContent = `Hola, ${currentUser?.name || "estudiante"}`;
+        paragraph.textContent = "Pregunta, organiza una idea, estructura una tarea o prepara un tema universitario.";
     }
 
     function openTemplateMessage(template) {
@@ -216,6 +472,14 @@ if (!token || !user) {
     function generateAssistantResponse(userText) {
         const cleanText = userText.toLowerCase();
 
+        if (currentBusiness?.status === "pending") {
+            return "Puedo ayudarte con eso. Recuerda que tu emprendimiento todavía está pendiente de revisión, así que por ahora no será usado en recomendaciones públicas dentro de UniPlace.";
+        }
+
+        if (currentBusiness?.status === "rejected") {
+            return "Puedo ayudarte con temas académicos y organización de ideas. Tu emprendimiento aparece como rechazado, así que más adelante convendría agregar una opción para editarlo y volver a solicitar revisión.";
+        }
+
         if (cleanText.includes("resumen")) {
             return "Claro. Puedo ayudarte a convertir tu contenido en un resumen más claro, ordenado y fácil de estudiar. Pega el texto completo y lo estructuro por ideas principales.";
         }
@@ -230,6 +494,13 @@ if (!token || !user) {
 
         if (cleanText.includes("cita") || cleanText.includes("apa")) {
             return "Puedo ayudarte con formato APA, citas dentro del texto y referencias. Solo asegúrate de revisar los datos reales de cada fuente antes de entregar.";
+        }
+
+        if (
+            currentBusiness?.status === "approved" &&
+            (cleanText.includes("emprendimiento") || cleanText.includes("negocio") || cleanText.includes("mi negocio"))
+        ) {
+            return `Tu emprendimiento "${currentBusiness.business_name}" está aprobado. Más adelante podremos hacer que UniPlace lo use dentro de recomendaciones inteligentes para estudiantes.`;
         }
 
         return "Entendido. UniPlace puede ayudarte a ordenar esa idea, explicarla mejor o convertirla en un formato académico más claro. En una integración futura, esta respuesta vendría desde una API de IA real.";
@@ -262,14 +533,21 @@ if (!token || !user) {
     }
 
     function autoResizeTextarea() {
+        if (!chatInput) return;
+
         chatInput.style.height = "auto";
         chatInput.style.height = `${chatInput.scrollHeight}px`;
     }
 
-    if (!activeConversationId) {
-        createConversation(false);
+    function logout() {
+        localStorage.removeItem("uniplace_token");
+        localStorage.removeItem("uniplace_user");
+        window.location.href = "auth.html";
     }
 
-    renderConversationList();
-    renderMessages();
+    function redirectToAuth() {
+        localStorage.removeItem("uniplace_token");
+        localStorage.removeItem("uniplace_user");
+        window.location.href = "auth.html";
+    }
 });

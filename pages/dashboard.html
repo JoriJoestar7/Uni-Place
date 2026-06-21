@@ -19,21 +19,43 @@
 
     <div class="dashboard-layout">
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-top">
-                <a href="../index.html" class="sidebar-brand">
-                    <img src="../assets/icon.png" alt="UniPlace">
-                    <span>UniPlace</span>
-                </a>
+<div class="sidebar-top">
+    <a href="../index.html" class="sidebar-brand">
+        <img src="../assets/icon.png" alt="UniPlace">
+        <span>UniPlace</span>
+    </a>
 
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <span></span>
-                    <span></span>
-                </button>
-            </div>
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <span></span>
+        <span></span>
+    </button>
+</div>
 
-            <button class="new-chat-btn" id="newChatBtn">
-                Nuevo Chat
-            </button>
+<div class="dashboard-user-card" id="dashboardUserCard">
+    <p class="dashboard-user-label">Sesión activa</p>
+
+    <h2 id="dashboardUserName">
+        Usuario
+    </h2>
+
+    <span id="dashboardUserEmail">
+        correo@uniplace.com
+    </span>
+
+    <div class="dashboard-user-role" id="dashboardUserRole">
+        student
+    </div>
+
+    <div class="dashboard-business-mini hidden" id="dashboardBusinessMini">
+        <p>Emprendimiento</p>
+        <strong id="dashboardBusinessName">Negocio</strong>
+        <span id="dashboardBusinessStatus">pending</span>
+    </div>
+</div>
+
+<button class="new-chat-btn" id="newChatBtn">
+    Nuevo Chat
+</button>
 
             <nav class="sidebar-menu">
                 <button data-template="about">Qué es UniPlace</button>
