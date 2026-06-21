@@ -72,8 +72,8 @@ document.addEventListener("DOMContentLoaded", () => {
             showMessage(loginMessage, "Acceso correcto. Redirigiendo...", true);
 
             setTimeout(() => {
-                window.location.href = "dashboard.html";
-            }, 700);
+                redirectByRole(data.user);
+            }, 650);
 
         } catch (error) {
             console.error("LOGIN_FRONT_ERROR:", error);
@@ -115,12 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    name,
-                    email,
-                    password,
-                    role
-                })
+                body: JSON.stringify({ name, email, password, role })
             });
 
             const data = await response.json();
@@ -135,8 +130,8 @@ document.addEventListener("DOMContentLoaded", () => {
             showMessage(registerMessage, "Cuenta creada correctamente. Redirigiendo...", true);
 
             setTimeout(() => {
-                window.location.href = "dashboard.html";
-            }, 700);
+                redirectByRole(data.user);
+            }, 650);
 
         } catch (error) {
             console.error("REGISTER_FRONT_ERROR:", error);
@@ -170,5 +165,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (form.id === "registerForm") {
             button.textContent = isLoading ? "Creando cuenta..." : "Crear cuenta";
         }
+    }
+
+    function redirectByRole(user) {
+        if (user.role === "entrepreneur") {
+            window.location.href = "business-register.html";
+            return;
+        }
+
+        window.location.href = "dashboard.html";
     }
 });

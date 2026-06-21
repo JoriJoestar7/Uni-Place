@@ -49,20 +49,23 @@ router.post("/register", async (req, res) => {
             [name.trim(), normalizedEmail, passwordHash, finalRole]
         );
 
-        const user = {
+        const token = createToken({
             id: result.insertId,
             name: name.trim(),
             email: normalizedEmail,
             role: finalRole
-        };
-
-        const token = createToken(user);
+        });
 
         return res.status(201).json({
             ok: true,
             message: "Cuenta creada correctamente.",
             token,
-            user
+            user: {
+                id: result.insertId,
+                name: name.trim(),
+                email: normalizedEmail,
+                role: finalRole
+            }
         });
 
     } catch (error) {
@@ -73,7 +76,7 @@ router.post("/register", async (req, res) => {
             message: "Error interno al crear la cuenta."
         });
     }
-});
+}); 
 
 router.post("/login", async (req, res) => {
     try {

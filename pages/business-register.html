@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar emprendimiento | UniPlace</title>
+
+    <link rel="icon" href="../assets/icon.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/auth.css">
+    <link rel="stylesheet" href="../css/business.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap">
+</head>
+<body class="auth-body">
+
+    <div class="cursor-glow"></div>
+    <div class="page-noise"></div>
+    <div class="background-halo halo-one"></div>
+    <div class="background-halo halo-two"></div>
+
+    <main class="business-wrapper">
+        <section class="business-card fade-up">
+            <a href="../index.html" class="auth-brand">
+                <img src="../assets/icon.png" alt="Logo UniPlace">
+                <span>UniPlace</span>
+            </a>
+
+            <div class="auth-heading">
+                <p>Cuenta de emprendimiento</p>
+                <h1>Registra tu negocio</h1>
+            </div>
+
+            <p class="business-intro">
+                Completa la información principal de tu emprendimiento. El registro quedará en estado pendiente
+                mientras se revisa dentro de UniPlace.
+            </p>
+
+            <div class="business-status hidden" id="businessStatusBox">
+                <h2>Emprendimiento ya registrado</h2>
+                <p id="businessStatusText"></p>
+
+                <div class="business-actions">
+                    <a href="dashboard.html" class="auth-submit business-link-btn">Ir al dashboard</a>
+                    <button class="business-secondary-btn" id="logoutBtn" type="button">Cerrar sesión</button>
+                </div>
+            </div>
+
+            <form class="auth-form business-form" id="businessForm">
+                <label>
+                    Nombre del emprendimiento *
+                    <input type="text" id="businessName" placeholder="Ej: Café Universitario">
+                </label>
+
+                <label>
+                    Categoría *
+                    <input type="text" id="category" placeholder="Ej: Comida, ropa, tecnología, servicios">
+                </label>
+
+                <label class="business-full">
+                    Descripción *
+                    <textarea id="description" rows="4" placeholder="Describe qué vende o qué ofrece tu emprendimiento"></textarea>
+                </label>
+
+                <label>
+                    Teléfono / WhatsApp *
+                    <input type="text" id="phone" placeholder="Ej: 0987654321">
+                </label>
+
+                <label>
+                    Correo del negocio
+                    <input type="email" id="businessEmail" placeholder="negocio@correo.com">
+                </label>
+
+                <label>
+                    Instagram
+                    <input type="text" id="instagram" placeholder="@tuemprendimiento">
+                </label>
+
+                <label>
+                    Sitio web
+                    <input type="text" id="website" placeholder="https://...">
+                </label>
+
+                <label class="business-full">
+                    Ubicación
+                    <input type="text" id="location" placeholder="Ej: Quito, Universidad Salesiana, campus sur">
+                </label>
+
+                <p class="form-message business-full" id="businessMessage"></p>
+
+                <div class="business-actions business-full">
+                    <button type="submit" class="auth-submit">
+                        Enviar registro
+                    </button>
+
+                    <button type="button" class="business-secondary-btn" id="logoutBtnForm">
+                        Cerrar sesión
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script src="../js/business-register.js"></script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { pool } from "./db.js";
 import authRoutes from "./routes/auth.routes.js";
+import businessRoutes from "./routes/business.routes.js";
 
 dotenv.config();
 
@@ -42,7 +43,7 @@ app.get("/api/health", async (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-
+app.use("/api/business", businessRoutes);
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
