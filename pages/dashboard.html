@@ -19,70 +19,68 @@
 
     <div class="dashboard-layout">
         <aside class="sidebar" id="sidebar">
-<div class="sidebar-top">
-    <a href="../index.html" class="sidebar-brand">
-        <img src="../assets/icon.png" alt="UniPlace">
-        <span>UniPlace</span>
-    </a>
+            <div class="sidebar-top">
+                <a href="../index.html" class="sidebar-brand">
+                    <img src="../assets/icon.png" alt="UniPlace">
+                    <span>UniPlace</span>
+                </a>
 
-    <button class="sidebar-toggle" id="sidebarToggle">
-        <span></span>
-        <span></span>
-    </button>
-</div>
+                <button class="sidebar-toggle" id="sidebarToggle" type="button">
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
 
-<div class="dashboard-user-card" id="dashboardUserCard">
-    <p class="dashboard-user-label">Sesión activa</p>
+            <div class="sidebar-scroll">
+                <button class="new-chat-btn" id="newChatBtn" type="button">
+                    Nuevo Chat
+                </button>
 
-    <h2 id="dashboardUserName">
-        Usuario
-    </h2>
+                <nav class="sidebar-menu">
+                    <button id="accountInfoBtn" type="button">Mi cuenta</button>
+                    <button id="businessInfoBtn" class="hidden" type="button">Mi emprendimiento</button>
 
-    <span id="dashboardUserEmail">
-        correo@uniplace.com
-    </span>
+                    <button data-template="about" type="button">Qué es UniPlace</button>
+                    <button data-template="how" type="button">Cómo Funciona</button>
+                    <button data-template="team" type="button">Quiénes Somos</button>
+                    <button data-template="authors" type="button">Autores</button>
+                    <button data-template="terms" type="button">Términos</button>
+                </nav>
 
-    <div class="dashboard-user-role" id="dashboardUserRole">
-        student
-    </div>
+                <div class="dashboard-business-mini hidden" id="dashboardBusinessMini">
+                    <p>Emprendimiento</p>
+                    <strong id="dashboardBusinessName">Negocio</strong>
+                    <span id="dashboardBusinessStatus">pending</span>
+                </div>
 
-    <div class="dashboard-business-mini hidden" id="dashboardBusinessMini">
-        <p>Emprendimiento</p>
-        <strong id="dashboardBusinessName">Negocio</strong>
-        <span id="dashboardBusinessStatus">pending</span>
-    </div>
-</div>
+                <div class="conversation-area">
+                    <div class="conversation-head">
+                        <p class="conversation-label">Conversaciones</p>
+                        <span id="conversationCount">0</span>
+                    </div>
 
-<button class="new-chat-btn" id="newChatBtn">
-    Nuevo Chat
-</button>
+                    <input
+                        type="text"
+                        class="conversation-search"
+                        id="conversationSearch"
+                        placeholder="Buscar chat..."
+                    >
 
-<nav class="sidebar-menu">
-    <button id="accountInfoBtn" type="button">Mi cuenta</button>
-    <button id="businessInfoBtn" class="hidden" type="button">Mi emprendimiento</button>
+                    <div class="conversation-list" id="conversationList"></div>
+                </div>
+            </div>
 
-    <button data-template="about">Qué es UniPlace</button>
-    <button data-template="how">Cómo Funciona</button>
-    <button data-template="team">Quiénes Somos</button>
-    <button data-template="authors">Autores</button>
-    <button data-template="terms">Términos</button>
-</nav>
+            <div class="sidebar-profile-card" id="dashboardUserCard">
+                <div class="sidebar-profile-avatar" id="dashboardUserAvatar">
+                    U
+                </div>
 
-<div class="conversation-area">
-    <div class="conversation-head">
-        <p class="conversation-label">Conversaciones</p>
-        <span id="conversationCount">0</span>
-    </div>
-
-    <input 
-        type="text" 
-        class="conversation-search" 
-        id="conversationSearch" 
-        placeholder="Buscar chat..."
-    >
-
-    <div class="conversation-list" id="conversationList"></div>
-</div>
+                <div class="sidebar-profile-info">
+                    <h2 id="dashboardUserName">Usuario</h2>
+                    <span id="dashboardUserEmail">correo@uniplace.com</span>
+                    <p id="dashboardUserRole">student</p>
+                </div>
+            </div>
         </aside>
 
         <main class="chat-shell">
@@ -92,45 +90,45 @@
                     <h1 id="currentChatTitle">Nuevo Chat</h1>
                 </div>
 
-<div class="chat-actions">
-    <button class="clear-btn" id="clearStorageBtn">
-        Limpiar
-    </button>
+                <div class="chat-actions">
+                    <button class="clear-btn" id="clearStorageBtn" type="button">
+                        Eliminar chat
+                    </button>
 
-    <button class="clear-btn" id="logoutBtn">
-        Salir
-    </button>
-</div>
+                    <button class="clear-btn" id="logoutBtn" type="button">
+                        Salir
+                    </button>
+                </div>
             </header>
 
             <section class="chat-window" id="chatWindow">
-<div class="empty-state" id="emptyState">
-    <span>UniPlace Assistant</span>
+                <div class="empty-state" id="emptyState">
+                    <span>UniPlace Assistant</span>
 
-    <h2>¿Qué necesitas resolver hoy?</h2>
+                    <h2>¿Qué necesitas resolver hoy?</h2>
 
-    <p>
-        Pregunta, organiza una idea, estructura una tarea o prepara un tema universitario.
-    </p>
+                    <p>
+                        Pregunta, organiza una idea, estructura una tarea o prepara un tema universitario.
+                    </p>
 
-    <div class="prompt-suggestions">
-        <button type="button" data-prompt="Ayúdame a resumir un tema para estudiar.">
-            Resumir un tema
-        </button>
+                    <div class="prompt-suggestions">
+                        <button type="button" data-prompt="Ayúdame a resumir un tema para estudiar.">
+                            Resumir un tema
+                        </button>
 
-        <button type="button" data-prompt="Ayúdame a organizar una tarea universitaria paso a paso.">
-            Organizar una tarea
-        </button>
+                        <button type="button" data-prompt="Ayúdame a organizar una tarea universitaria paso a paso.">
+                            Organizar una tarea
+                        </button>
 
-        <button type="button" data-prompt="Explícame un tema difícil de forma sencilla.">
-            Explicar un tema
-        </button>
+                        <button type="button" data-prompt="Explícame un tema difícil de forma sencilla.">
+                            Explicar un tema
+                        </button>
 
-        <button type="button" data-prompt="Ayúdame a preparar preguntas para un examen.">
-            Preparar examen
-        </button>
-    </div>
-</div>
+                        <button type="button" data-prompt="Ayúdame a preparar preguntas para un examen.">
+                            Preparar examen
+                        </button>
+                    </div>
+                </div>
             </section>
 
             <form class="chat-composer" id="chatForm">

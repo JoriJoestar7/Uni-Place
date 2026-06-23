@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const newChatBtn = document.getElementById("newChatBtn");
     const conversationList = document.getElementById("conversationList");
     const conversationSearch = document.getElementById("conversationSearch");
-const conversationCount = document.getElementById("conversationCount");
+    const conversationCount = document.getElementById("conversationCount");
     const chatWindow = document.getElementById("chatWindow");
     const chatForm = document.getElementById("chatForm");
     const chatInput = document.getElementById("chatInput");
@@ -21,6 +21,7 @@ const conversationCount = document.getElementById("conversationCount");
     const emptyState = document.getElementById("emptyState");
     const templateButtons = document.querySelectorAll("[data-template]");
 
+    const dashboardUserAvatar = document.getElementById("dashboardUserAvatar");
     const dashboardUserName = document.getElementById("dashboardUserName");
     const dashboardUserEmail = document.getElementById("dashboardUserEmail");
     const dashboardUserRole = document.getElementById("dashboardUserRole");
@@ -96,9 +97,7 @@ const conversationCount = document.getElementById("conversationCount");
             if (currentUser.role === "entrepreneur") {
                 const hasBusiness = await validateEntrepreneurBusiness();
 
-                if (!hasBusiness) {
-                    return false;
-                }
+                if (!hasBusiness) return false;
             }
 
             if (!["student", "entrepreneur"].includes(currentUser.role)) {
@@ -146,51 +145,6 @@ const conversationCount = document.getElementById("conversationCount");
         }
     }
 
-    function renderUserPanel() {
-        if (!currentUser) return;
-
-        if (dashboardUserName) {
-            dashboardUserName.textContent = currentUser.name || "Usuario";
-        }
-
-        if (dashboardUserEmail) {
-            dashboardUserEmail.textContent = currentUser.email || "";
-        }
-
-        if (dashboardUserRole) {
-            const roleLabels = {
-                student: "Estudiante",
-                entrepreneur: "Emprendimiento",
-                admin: "Administrador"
-            };
-
-            dashboardUserRole.textContent = roleLabels[currentUser.role] || currentUser.role;
-        }
-
-        if (currentUser.role === "entrepreneur" && currentBusiness) {
-            businessInfoBtn?.classList.remove("hidden");
-            dashboardBusinessMini?.classList.remove("hidden");
-
-            if (dashboardBusinessName) {
-                dashboardBusinessName.textContent = currentBusiness.business_name || "Mi emprendimiento";
-            }
-
-            if (dashboardBusinessStatus) {
-                const statusLabels = {
-                    pending: "Pendiente",
-                    approved: "Aprobado",
-                    rejected: "Rechazado",
-                    hidden: "Oculto"
-                };
-
-                dashboardBusinessStatus.textContent = statusLabels[currentBusiness.status] || currentBusiness.status;
-            }
-        } else {
-            businessInfoBtn?.classList.add("hidden");
-            dashboardBusinessMini?.classList.add("hidden");
-        }
-    }
-
     function setupEvents() {
         document.addEventListener("mousemove", (event) => {
             if (!cursorGlow) return;
@@ -208,32 +162,24 @@ const conversationCount = document.getElementById("conversationCount");
 
         if (newChatBtn) {
             newChatBtn.addEventListener("click", () => {
-                createConversation();
+                startNewChat();
             });
         }
-        if (conversationSearch) {
-    conversationSearch.addEventListener("input", () => {
-        renderConversationList();
-    });
-}
 
         if (clearStorageBtn) {
             clearStorageBtn.addEventListener("click", () => {
-                const confirmed = confirm("¿Quieres eliminar todas las conversaciones guardadas?");
-
-                if (!confirmed) return;
-
-                conversations = [];
-                activeConversationId = null;
-                saveConversations();
-                createConversation(false);
-                renderConversationList();
-                renderMessages();
+                deleteActiveConversation();
             });
         }
 
         if (logoutBtn) {
             logoutBtn.addEventListener("click", logout);
+        }
+
+        if (conversationSearch) {
+            conversationSearch.addEventListener("input", () => {
+                renderConversationList();
+            });
         }
 
         if (chatForm) {
@@ -309,6 +255,69 @@ const conversationCount = document.getElementById("conversationCount");
         }
     }
 
+    function renderUserPanel() {
+        if (!currentUser) return;
+
+        if (dashboardUserAvatar) {
+            dashboardUserAvatar.textContent = getInitials(currentUser.name || currentUser.email || "U");
+        }
+
+        if (dashboardUserName) {
+            dashboardUserName.textContent = currentUser.name || "Usuario";
+        }
+
+        if (dashboardUserEmail) {
+            dashboardUserEmail.textContent = currentUser.email || "";
+        }
+
+        if (dashboardUserRole) {
+            const roleLabels = {
+                student: "Estudiante",
+                entrepreneur: "Emprendimiento",
+                admin: "Administrador"
+            };
+
+            dashboardUserRole.textContent = roleLabels[currentUser.role] || currentUser.role;
+        }
+
+        if (currentUser.role === "entrepreneur" && currentBusiness) {
+            businessInfoBtn?.classList.remove("hidden");
+            dashboardBusinessMini?.classList.remove("hidden");
+
+            if (dashboardBusinessName) {
+                dashboardBusinessName.textContent = currentBusiness.business_name || "Mi emprendimiento";
+            }
+
+            if (dashboardBusinessStatus) {
+                const statusLabels = {
+                    pending: "Pendiente",
+                    approved: "Aprobado",
+                    rejected: "Rechazado",
+                    hidden: "Oculto"
+                };
+
+                dashboardBusinessStatus.textContent = statusLabels[currentBusiness.status] || currentBusiness.status;
+            }
+        } else {
+            businessInfoBtn?.classList.add("hidden");
+            dashboardBusinessMini?.classList.add("hidden");
+        }
+    }
+
+    function startNewChat() {
+        const activeConversation = getActiveConversation();
+
+        if (activeConversation && activeConversation.messages.length === 0) {
+            activeConversationId = activeConversation.id;
+            renderConversationList();
+            renderMessages();
+            chatInput?.focus();
+            return;
+        }
+
+        createConversation(true);
+    }
+
     function createConversation(render = true) {
         const conversation = {
             id: crypto.randomUUID(),
@@ -357,62 +366,125 @@ const conversationCount = document.getElementById("conversationCount");
     }
 
     function renderConversationList() {
-    if (!conversationList) return;
+        if (!conversationList) return;
 
-    conversationList.innerHTML = "";
+        conversationList.innerHTML = "";
 
-    const searchValue = conversationSearch
-        ? conversationSearch.value.trim().toLowerCase()
-        : "";
+        const searchValue = conversationSearch
+            ? conversationSearch.value.trim().toLowerCase()
+            : "";
 
-    const filteredConversations = conversations.filter((conversation) => {
-        const title = conversation.title.toLowerCase();
-        return title.includes(searchValue);
-    });
+        const filteredConversations = conversations.filter((conversation) => {
+            const title = conversation.title.toLowerCase();
+            const messagesText = conversation.messages
+                .map((message) => message.content)
+                .join(" ")
+                .toLowerCase();
 
-    if (conversationCount) {
-        conversationCount.textContent = filteredConversations.length;
-    }
-
-    if (filteredConversations.length === 0) {
-        conversationList.innerHTML = `
-            <div class="conversation-empty">
-                No se encontraron conversaciones.
-            </div>
-        `;
-        return;
-    }
-
-    filteredConversations.forEach((conversation) => {
-        const button = document.createElement("button");
-        button.className = "conversation-item";
-
-        const messageCount = conversation.messages.length;
-        const lastUpdated = formatConversationDate(conversation.updatedAt || conversation.createdAt);
-
-        button.innerHTML = `
-            <span class="conversation-item-title">
-                ${escapeHtml(conversation.title)}
-            </span>
-
-            <span class="conversation-item-meta">
-                ${messageCount} mensaje${messageCount === 1 ? "" : "s"} · ${lastUpdated}
-            </span>
-        `;
-
-        if (conversation.id === activeConversationId) {
-            button.classList.add("active");
-        }
-
-        button.addEventListener("click", () => {
-            activeConversationId = conversation.id;
-            renderConversationList();
-            renderMessages();
+            return title.includes(searchValue) || messagesText.includes(searchValue);
         });
 
-        conversationList.appendChild(button);
-    });
-}
+        if (conversationCount) {
+            conversationCount.textContent = filteredConversations.length;
+        }
+
+        if (filteredConversations.length === 0) {
+            conversationList.innerHTML = `
+                <div class="conversation-empty">
+                    No se encontraron conversaciones.
+                </div>
+            `;
+            return;
+        }
+
+        filteredConversations.forEach((conversation) => {
+            const item = document.createElement("article");
+            item.className = "conversation-item";
+            item.setAttribute("role", "button");
+            item.setAttribute("tabindex", "0");
+
+            const messageCount = conversation.messages.length;
+            const lastUpdated = formatConversationDate(conversation.updatedAt || conversation.createdAt);
+
+            item.innerHTML = `
+                <div class="conversation-content">
+                    <span class="conversation-item-title">
+                        ${escapeHtml(conversation.title)}
+                    </span>
+
+                    <span class="conversation-item-meta">
+                        ${messageCount} mensaje${messageCount === 1 ? "" : "s"} · ${lastUpdated}
+                    </span>
+                </div>
+
+                <button class="conversation-delete" type="button" title="Eliminar chat">
+                    ×
+                </button>
+            `;
+
+            if (conversation.id === activeConversationId) {
+                item.classList.add("active");
+            }
+
+            item.addEventListener("click", () => {
+                activeConversationId = conversation.id;
+                renderConversationList();
+                renderMessages();
+            });
+
+            item.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    activeConversationId = conversation.id;
+                    renderConversationList();
+                    renderMessages();
+                }
+            });
+
+            const deleteButton = item.querySelector(".conversation-delete");
+
+            deleteButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                deleteConversationById(conversation.id);
+            });
+
+            conversationList.appendChild(item);
+        });
+    }
+
+    function deleteActiveConversation() {
+        if (!activeConversationId) return;
+
+        deleteConversationById(activeConversationId);
+    }
+
+    function deleteConversationById(conversationId) {
+        const conversation = conversations.find((item) => item.id === conversationId);
+
+        if (!conversation) return;
+
+        const shouldConfirm = conversation.messages.length > 0;
+
+        if (shouldConfirm) {
+            const confirmed = confirm(`¿Quieres eliminar el chat "${conversation.title}"?`);
+
+            if (!confirmed) return;
+        }
+
+        conversations = conversations.filter((item) => item.id !== conversationId);
+
+        if (activeConversationId === conversationId) {
+            activeConversationId = conversations[0]?.id || null;
+        }
+
+        if (conversations.length === 0) {
+            createConversation(false);
+        }
+
+        saveConversations();
+        renderConversationList();
+        renderMessages();
+    }
+
     function renderMessages() {
         const conversation = getActiveConversation();
 
@@ -836,6 +908,16 @@ const conversationCount = document.getElementById("conversationCount");
             month: "long",
             day: "numeric"
         });
+    }
+
+    function getInitials(value) {
+        const parts = value.trim().split(/\s+/);
+
+        if (parts.length === 1) {
+            return parts[0].slice(0, 1).toUpperCase();
+        }
+
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     }
 
     function escapeHtml(value) {
