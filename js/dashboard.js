@@ -10,6 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebarToggle = document.getElementById("sidebarToggle");
     const newChatBtn = document.getElementById("newChatBtn");
     const conversationList = document.getElementById("conversationList");
+    const conversationSearch = document.getElementById("conversationSearch");
+const conversationCount = document.getElementById("conversationCount");
     const chatWindow = document.getElementById("chatWindow");
     const chatForm = document.getElementById("chatForm");
     const chatInput = document.getElementById("chatInput");
@@ -18,12 +20,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const logoutBtn = document.getElementById("logoutBtn");
     const emptyState = document.getElementById("emptyState");
     const templateButtons = document.querySelectorAll("[data-template]");
+
     const dashboardUserName = document.getElementById("dashboardUserName");
     const dashboardUserEmail = document.getElementById("dashboardUserEmail");
     const dashboardUserRole = document.getElementById("dashboardUserRole");
     const dashboardBusinessMini = document.getElementById("dashboardBusinessMini");
     const dashboardBusinessName = document.getElementById("dashboardBusinessName");
     const dashboardBusinessStatus = document.getElementById("dashboardBusinessStatus");
+
+    const accountInfoBtn = document.getElementById("accountInfoBtn");
+    const businessInfoBtn = document.getElementById("businessInfoBtn");
 
     let currentUser = null;
     let currentBusiness = null;
@@ -33,23 +39,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     startDashboard();
 
-async function startDashboard() {
-    const canEnter = await validateDashboardAccess();
+    async function startDashboard() {
+        const canEnter = await validateDashboardAccess();
 
-    if (!canEnter) return;
+        if (!canEnter) return;
 
-    conversations = loadConversations();
-    activeConversationId = conversations[0]?.id || null;
+        conversations = loadConversations();
+        activeConversationId = conversations[0]?.id || null;
 
-    if (!activeConversationId) {
-        createConversation(false);
+        if (!activeConversationId) {
+            createConversation(false);
+        }
+
+        renderUserPanel();
+        setupEvents();
+        renderConversationList();
+        renderMessages();
     }
-
-    renderUserPanel();
-    setupEvents();
-    renderConversationList();
-    renderMessages();
-}
 
     async function validateDashboardAccess() {
         if (!token || !userRaw) {
@@ -80,7 +86,6 @@ async function startDashboard() {
             }
 
             currentUser = data.user;
-
             localStorage.setItem("uniplace_user", JSON.stringify(currentUser));
 
             if (currentUser.role === "admin") {
@@ -140,48 +145,52 @@ async function startDashboard() {
             return false;
         }
     }
-function renderUserPanel() {
-    if (!currentUser) return;
 
-    if (dashboardUserName) {
-        dashboardUserName.textContent = currentUser.name || "Usuario";
-    }
+    function renderUserPanel() {
+        if (!currentUser) return;
 
-    if (dashboardUserEmail) {
-        dashboardUserEmail.textContent = currentUser.email || "";
-    }
-
-    if (dashboardUserRole) {
-        const roleLabels = {
-            student: "Estudiante",
-            entrepreneur: "Emprendimiento",
-            admin: "Administrador"
-        };
-
-        dashboardUserRole.textContent = roleLabels[currentUser.role] || currentUser.role;
-    }
-
-    if (currentUser.role === "entrepreneur" && currentBusiness) {
-        dashboardBusinessMini?.classList.remove("hidden");
-
-        if (dashboardBusinessName) {
-            dashboardBusinessName.textContent = currentBusiness.business_name || "Mi emprendimiento";
+        if (dashboardUserName) {
+            dashboardUserName.textContent = currentUser.name || "Usuario";
         }
 
-        if (dashboardBusinessStatus) {
-            const statusLabels = {
-                pending: "Pendiente",
-                approved: "Aprobado",
-                rejected: "Rechazado",
-                hidden: "Oculto"
+        if (dashboardUserEmail) {
+            dashboardUserEmail.textContent = currentUser.email || "";
+        }
+
+        if (dashboardUserRole) {
+            const roleLabels = {
+                student: "Estudiante",
+                entrepreneur: "Emprendimiento",
+                admin: "Administrador"
             };
 
-            dashboardBusinessStatus.textContent = statusLabels[currentBusiness.status] || currentBusiness.status;
+            dashboardUserRole.textContent = roleLabels[currentUser.role] || currentUser.role;
         }
-    } else {
-        dashboardBusinessMini?.classList.add("hidden");
+
+        if (currentUser.role === "entrepreneur" && currentBusiness) {
+            businessInfoBtn?.classList.remove("hidden");
+            dashboardBusinessMini?.classList.remove("hidden");
+
+            if (dashboardBusinessName) {
+                dashboardBusinessName.textContent = currentBusiness.business_name || "Mi emprendimiento";
+            }
+
+            if (dashboardBusinessStatus) {
+                const statusLabels = {
+                    pending: "Pendiente",
+                    approved: "Aprobado",
+                    rejected: "Rechazado",
+                    hidden: "Oculto"
+                };
+
+                dashboardBusinessStatus.textContent = statusLabels[currentBusiness.status] || currentBusiness.status;
+            }
+        } else {
+            businessInfoBtn?.classList.add("hidden");
+            dashboardBusinessMini?.classList.add("hidden");
+        }
     }
-}
+
     function setupEvents() {
         document.addEventListener("mousemove", (event) => {
             if (!cursorGlow) return;
@@ -202,6 +211,11 @@ function renderUserPanel() {
                 createConversation();
             });
         }
+        if (conversationSearch) {
+    conversationSearch.addEventListener("input", () => {
+        renderConversationList();
+    });
+}
 
         if (clearStorageBtn) {
             clearStorageBtn.addEventListener("click", () => {
@@ -235,12 +249,16 @@ function renderUserPanel() {
                 }
 
                 addMessage("user", text);
+
                 chatInput.value = "";
                 autoResizeTextarea();
 
+                showTypingIndicator();
+
                 setTimeout(() => {
+                    hideTypingIndicator();
                     addMessage("assistant", generateAssistantResponse(text));
-                }, 450);
+                }, 650);
             });
         }
 
@@ -261,6 +279,34 @@ function renderUserPanel() {
                 openTemplateMessage(template);
             });
         });
+
+        if (chatWindow) {
+            chatWindow.addEventListener("click", (event) => {
+                const suggestionButton = event.target.closest("[data-prompt]");
+
+                if (!suggestionButton) return;
+
+                const prompt = suggestionButton.dataset.prompt;
+
+                if (!prompt || !chatInput) return;
+
+                chatInput.value = prompt;
+                chatInput.focus();
+                autoResizeTextarea();
+            });
+        }
+
+        if (accountInfoBtn) {
+            accountInfoBtn.addEventListener("click", () => {
+                renderAccountView();
+            });
+        }
+
+        if (businessInfoBtn) {
+            businessInfoBtn.addEventListener("click", () => {
+                renderBusinessView();
+            });
+        }
     }
 
     function createConversation(render = true) {
@@ -268,7 +314,8 @@ function renderUserPanel() {
             id: crypto.randomUUID(),
             title: "Nuevo Chat",
             messages: [],
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            updatedAt: Date.now()
         };
 
         conversations.unshift(conversation);
@@ -298,6 +345,8 @@ function renderUserPanel() {
             createdAt: Date.now()
         });
 
+        conversation.updatedAt = Date.now();
+
         if (role === "user" && conversation.title === "Nuevo Chat") {
             conversation.title = createTitleFromMessage(content);
         }
@@ -308,29 +357,62 @@ function renderUserPanel() {
     }
 
     function renderConversationList() {
-        if (!conversationList) return;
+    if (!conversationList) return;
 
-        conversationList.innerHTML = "";
+    conversationList.innerHTML = "";
 
-        conversations.forEach((conversation) => {
-            const button = document.createElement("button");
-            button.className = "conversation-item";
-            button.textContent = conversation.title;
+    const searchValue = conversationSearch
+        ? conversationSearch.value.trim().toLowerCase()
+        : "";
 
-            if (conversation.id === activeConversationId) {
-                button.classList.add("active");
-            }
+    const filteredConversations = conversations.filter((conversation) => {
+        const title = conversation.title.toLowerCase();
+        return title.includes(searchValue);
+    });
 
-            button.addEventListener("click", () => {
-                activeConversationId = conversation.id;
-                renderConversationList();
-                renderMessages();
-            });
-
-            conversationList.appendChild(button);
-        });
+    if (conversationCount) {
+        conversationCount.textContent = filteredConversations.length;
     }
 
+    if (filteredConversations.length === 0) {
+        conversationList.innerHTML = `
+            <div class="conversation-empty">
+                No se encontraron conversaciones.
+            </div>
+        `;
+        return;
+    }
+
+    filteredConversations.forEach((conversation) => {
+        const button = document.createElement("button");
+        button.className = "conversation-item";
+
+        const messageCount = conversation.messages.length;
+        const lastUpdated = formatConversationDate(conversation.updatedAt || conversation.createdAt);
+
+        button.innerHTML = `
+            <span class="conversation-item-title">
+                ${escapeHtml(conversation.title)}
+            </span>
+
+            <span class="conversation-item-meta">
+                ${messageCount} mensaje${messageCount === 1 ? "" : "s"} · ${lastUpdated}
+            </span>
+        `;
+
+        if (conversation.id === activeConversationId) {
+            button.classList.add("active");
+        }
+
+        button.addEventListener("click", () => {
+            activeConversationId = conversation.id;
+            renderConversationList();
+            renderMessages();
+        });
+
+        conversationList.appendChild(button);
+    });
+}
     function renderMessages() {
         const conversation = getActiveConversation();
 
@@ -363,7 +445,13 @@ function renderUserPanel() {
 
             const bubble = document.createElement("div");
             bubble.className = "bubble";
-            bubble.textContent = message.content;
+
+            const label = message.role === "user" ? "Tú" : "UniPlace";
+
+            bubble.innerHTML = `
+                <span class="message-label">${label}</span>
+                <p>${formatMessageContent(message.content)}</p>
+            `;
 
             messageElement.appendChild(bubble);
             chatWindow.appendChild(messageElement);
@@ -374,7 +462,6 @@ function renderUserPanel() {
 
     function renderUserStatusBanner() {
         if (!currentUser) return;
-
         if (currentUser.role !== "entrepreneur" || !currentBusiness) return;
 
         const banner = document.createElement("section");
@@ -410,7 +497,7 @@ function renderUserPanel() {
             rejected: {
                 label: "Emprendimiento rechazado",
                 title: `${businessName} fue rechazado`,
-                text: "Tu emprendimiento no será visible por ahora. Más adelante podemos crear una opción para editar la información y solicitar una nueva revisión."
+                text: "Tu emprendimiento no será visible por ahora. Más adelante podrás editar la información y volver a mejorar su perfil."
             },
             hidden: {
                 label: "Emprendimiento oculto",
@@ -442,6 +529,144 @@ function renderUserPanel() {
 
         title.textContent = `Hola, ${currentUser?.name || "estudiante"}`;
         paragraph.textContent = "Pregunta, organiza una idea, estructura una tarea o prepara un tema universitario.";
+    }
+
+    function renderAccountView() {
+        if (!chatWindow || !currentUser) return;
+
+        chatWindow.innerHTML = "";
+
+        if (currentUser.role === "entrepreneur" && currentBusiness) {
+            renderUserStatusBanner();
+        }
+
+        if (currentChatTitle) {
+            currentChatTitle.textContent = "Mi cuenta";
+        }
+
+        const card = document.createElement("section");
+        card.className = "dashboard-info-card";
+
+        const roleLabels = {
+            student: "Estudiante",
+            entrepreneur: "Emprendimiento",
+            admin: "Administrador"
+        };
+
+        card.innerHTML = `
+            <span class="dashboard-info-kicker">Perfil de usuario</span>
+
+            <h2>Mi cuenta</h2>
+
+            <p class="dashboard-info-description">
+                Aquí puedes revisar la información principal de tu cuenta dentro de UniPlace.
+                Más adelante esta sección podrá incluir edición de perfil, preferencias y configuración.
+            </p>
+
+            <div class="dashboard-info-grid">
+                ${createInfoRow("Nombre", currentUser.name || "No registrado")}
+                ${createInfoRow("Correo", currentUser.email || "No registrado")}
+                ${createInfoRow("Rol", roleLabels[currentUser.role] || currentUser.role || "No registrado")}
+                ${createInfoRow("ID de usuario", currentUser.id || "No registrado")}
+                ${createInfoRow("Fecha de creación", formatDate(currentUser.created_at))}
+            </div>
+
+            <div class="dashboard-info-note">
+                En esta versión, la sesión se guarda en el navegador mediante localStorage.
+                Más adelante se puede mejorar con cookies seguras y configuración avanzada de cuenta.
+            </div>
+
+            <div class="dashboard-info-actions">
+                <button class="dashboard-info-btn primary" id="backToChatFromAccount">
+                    Volver al chat
+                </button>
+            </div>
+        `;
+
+        chatWindow.appendChild(card);
+
+        const backBtn = document.getElementById("backToChatFromAccount");
+
+        if (backBtn) {
+            backBtn.addEventListener("click", () => {
+                renderMessages();
+            });
+        }
+    }
+
+    function renderBusinessView() {
+        if (!chatWindow || !currentBusiness) return;
+
+        chatWindow.innerHTML = "";
+
+        renderUserStatusBanner();
+
+        if (currentChatTitle) {
+            currentChatTitle.textContent = "Mi emprendimiento";
+        }
+
+        const statusLabels = {
+            pending: "Pendiente de revisión",
+            approved: "Aprobado",
+            rejected: "Rechazado",
+            hidden: "Oculto"
+        };
+
+        const card = document.createElement("section");
+        card.className = "dashboard-info-card";
+
+        card.innerHTML = `
+            <span class="dashboard-info-kicker">Perfil del emprendimiento</span>
+
+            <h2>${escapeHtml(currentBusiness.business_name || "Mi emprendimiento")}</h2>
+
+            <p class="dashboard-info-description">
+                Aquí puedes revisar la información registrada de tu emprendimiento.
+                En una siguiente etapa agregaremos la opción para modificar estos datos directamente.
+            </p>
+
+            <div class="dashboard-info-grid">
+                ${createInfoRow("Estado", statusLabels[currentBusiness.status] || currentBusiness.status || "No registrado")}
+                ${createInfoRow("Descripción corta", currentBusiness.short_description || "No registrada")}
+                ${createInfoRow("Descripción", currentBusiness.description || "No registrada")}
+                ${createInfoRow("Ciudad", currentBusiness.city || "No registrada")}
+                ${createInfoRow("Dirección", currentBusiness.address || "No registrada")}
+                ${createInfoRow("Teléfono", currentBusiness.phone || "No registrado")}
+                ${createInfoRow("WhatsApp", currentBusiness.whatsapp || "No registrado")}
+                ${createInfoRow("Correo", currentBusiness.email || "No registrado")}
+                ${createInfoRow("Instagram", currentBusiness.instagram_url || "No registrado")}
+                ${createInfoRow("Sitio web", currentBusiness.website_url || "No registrado")}
+                ${createInfoRow("Keywords", currentBusiness.keywords || "No registradas")}
+                ${createInfoRow("Público objetivo", currentBusiness.target_audience || "No registrado")}
+                ${createInfoRow("Visible para IA", currentBusiness.is_ai_visible ? "Sí" : "No")}
+                ${createInfoRow("Fecha de registro", formatDate(currentBusiness.created_at))}
+            </div>
+
+            <div class="dashboard-info-note">
+                Futuro pendiente: permitir que el emprendedor edite esta información directamente.
+                Los cambios se guardarán automáticamente y el administrador podrá revisar un historial de modificaciones.
+            </div>
+
+            <div class="dashboard-info-actions">
+                <button class="dashboard-info-btn primary" id="backToChatFromBusiness">
+                    Volver al chat
+                </button>
+
+                <button class="dashboard-info-btn" type="button" disabled>
+                    Editar próximamente
+                </button>
+            </div>
+        `;
+
+        chatWindow.appendChild(card);
+
+        const backBtn = document.getElementById("backToChatFromBusiness");
+
+        if (backBtn) {
+            backBtn.addEventListener("click", () => {
+                renderMessages();
+            });
+        }
     }
 
     function openTemplateMessage(template) {
@@ -477,7 +702,7 @@ function renderUserPanel() {
         }
 
         if (currentBusiness?.status === "rejected") {
-            return "Puedo ayudarte con temas académicos y organización de ideas. Tu emprendimiento aparece como rechazado, así que más adelante convendría agregar una opción para editarlo y volver a solicitar revisión.";
+            return "Puedo ayudarte con temas académicos y organización de ideas. Tu emprendimiento aparece como rechazado, así que más adelante convendría editar la información del negocio.";
         }
 
         if (cleanText.includes("resumen")) {
@@ -506,14 +731,55 @@ function renderUserPanel() {
         return "Entendido. UniPlace puede ayudarte a ordenar esa idea, explicarla mejor o convertirla en un formato académico más claro. En una integración futura, esta respuesta vendría desde una API de IA real.";
     }
 
+    function showTypingIndicator() {
+        if (!chatWindow) return;
+
+        hideTypingIndicator();
+
+        const typingElement = document.createElement("div");
+        typingElement.className = "typing-indicator";
+        typingElement.id = "typingIndicator";
+
+        typingElement.innerHTML = `
+            <div class="typing-bubble">
+                UniPlace está escribiendo
+                <span class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+            </div>
+        `;
+
+        chatWindow.appendChild(typingElement);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        const typingElement = document.getElementById("typingIndicator");
+
+        if (typingElement) {
+            typingElement.remove();
+        }
+    }
+
+    function createInfoRow(label, value) {
+        return `
+            <div class="dashboard-info-row">
+                <span>${escapeHtml(label)}</span>
+                <strong>${escapeHtml(value || "No registrado")}</strong>
+            </div>
+        `;
+    }
+
     function createTitleFromMessage(message) {
         const clean = message.replace(/\s+/g, " ").trim();
 
-        if (clean.length <= 34) {
+        if (clean.length <= 42) {
             return clean;
         }
 
-        return `${clean.slice(0, 34)}...`;
+        return `${clean.slice(0, 42)}...`;
     }
 
     function saveConversations() {
@@ -537,6 +803,48 @@ function renderUserPanel() {
 
         chatInput.style.height = "auto";
         chatInput.style.height = `${chatInput.scrollHeight}px`;
+    }
+
+    function formatMessageContent(content) {
+        return escapeHtml(content).replace(/\n/g, "<br>");
+    }
+
+    function formatConversationDate(value) {
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return "Sin fecha";
+        }
+
+        return date.toLocaleDateString("es-EC", {
+            month: "short",
+            day: "numeric"
+        });
+    }
+
+    function formatDate(value) {
+        if (!value) return "No registrada";
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return "No registrada";
+        }
+
+        return date.toLocaleDateString("es-EC", {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
     }
 
     function logout() {
