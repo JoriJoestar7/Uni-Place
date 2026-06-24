@@ -225,6 +225,27 @@
     margin-bottom: 16px;
 }
 
+.business-rejection-reason {
+    margin-bottom: 18px;
+    padding: 16px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.business-rejection-reason strong {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text);
+    font-size: 0.72rem;
+}
+
+.business-rejection-reason p {
+    color: var(--soft);
+    line-height: 1.75;
+    font-size: 0.76rem;
+}
+
 .business-meta {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

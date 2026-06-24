@@ -33,6 +33,9 @@ router.get("/businesses", async (req, res) => {
                 b.keywords,
                 b.target_audience,
                 b.status,
+                b.rejection_reason,
+                b.rejected_at,
+                b.resubmitted_at,
                 b.is_ai_visible,
                 b.created_at,
                 b.updated_at,
@@ -90,12 +93,23 @@ router.get("/businesses", async (req, res) => {
 router.patch("/businesses/:id/status", async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, rejectionReason } = req.body;
 
         if (!validStatuses.includes(status)) {
             return res.status(400).json({
                 ok: false,
                 message: "Estado inválido."
+            });
+        }
+
+        const cleanRejectionReason = typeof rejectionReason === "string"
+            ? rejectionReason.trim()
+            : "";
+
+        if (status === "rejected" && cleanRejectionReason.length < 10) {
+            return res.status(400).json({
+                ok: false,
+                message: "Para rechazar un emprendimiento debes escribir una razón de al menos 10 caracteres."
             });
         }
 
@@ -111,19 +125,35 @@ router.patch("/businesses/:id/status", async (req, res) => {
             });
         }
 
-        await pool.execute(
-            "UPDATE businesses SET status = ? WHERE id = ?",
-            [status, id]
-        );
+        if (status === "rejected") {
+            await pool.execute(
+                `UPDATE businesses
+                 SET status = ?, rejection_reason = ?, rejected_at = NOW(), is_ai_visible = 0
+                 WHERE id = ?`,
+                [status, cleanRejectionReason, id]
+            );
+        } else {
+            const isVisibleForAI = status === "approved" || status === "pending" ? 1 : 0;
+
+            await pool.execute(
+                `UPDATE businesses
+                 SET status = ?, rejection_reason = NULL, rejected_at = NULL, is_ai_visible = ?
+                 WHERE id = ?`,
+                [status, isVisibleForAI, id]
+            );
+        }
 
         return res.json({
             ok: true,
-            message: `Estado actualizado a ${status}.`,
+            message: status === "rejected"
+                ? "Emprendimiento rechazado con razón registrada."
+                : `Estado actualizado a ${status}.`,
             business: {
                 id: Number(id),
                 business_name: existingBusiness[0].business_name,
                 previous_status: existingBusiness[0].status,
-                status
+                status,
+                rejection_reason: status === "rejected" ? cleanRejectionReason : null
             }
         });
 

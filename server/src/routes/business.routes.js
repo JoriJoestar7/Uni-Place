@@ -169,16 +169,152 @@ router.post("/register", verifyToken, async (req, res) => {
     }
 });
 
-async function createUniqueSlug(name) {
+
+router.patch("/resubmit", verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== "entrepreneur") {
+            return res.status(403).json({
+                ok: false,
+                message: "Solo las cuentas de emprendimiento pueden reenviar un negocio."
+            });
+        }
+
+        const {
+            businessName,
+            category,
+            description,
+            phone,
+            email,
+            instagram,
+            website,
+            location
+        } = req.body;
+
+        if (!businessName || !category || !description || !phone) {
+            return res.status(400).json({
+                ok: false,
+                message: "Completa los campos obligatorios del emprendimiento."
+            });
+        }
+
+        const [existingBusiness] = await pool.execute(
+            "SELECT id, status FROM businesses WHERE owner_user_id = ? LIMIT 1",
+            [req.user.id]
+        );
+
+        if (existingBusiness.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                message: "No tienes un emprendimiento registrado para reenviar."
+            });
+        }
+
+        const business = existingBusiness[0];
+
+        if (business.status !== "rejected") {
+            return res.status(409).json({
+                ok: false,
+                message: "Solo puedes volver a enviar un emprendimiento que fue rechazado."
+            });
+        }
+
+        const cleanBusinessName = businessName.trim();
+        const cleanCategory = category.trim();
+        const cleanDescription = description.trim();
+        const cleanPhone = phone.trim();
+        const cleanLocation = location?.trim() || null;
+
+        const slug = await createUniqueSlug(cleanBusinessName, business.id);
+
+        const shortDescription =
+            cleanDescription.length > 280
+                ? `${cleanDescription.slice(0, 277)}...`
+                : cleanDescription;
+
+        await pool.execute(
+            `UPDATE businesses
+             SET business_name = ?,
+                 slug = ?,
+                 description = ?,
+                 short_description = ?,
+                 city = ?,
+                 address = ?,
+                 phone = ?,
+                 whatsapp = ?,
+                 email = ?,
+                 website_url = ?,
+                 instagram_url = ?,
+                 keywords = ?,
+                 target_audience = ?,
+                 status = 'pending',
+                 rejection_reason = NULL,
+                 rejected_at = NULL,
+                 resubmitted_at = NOW(),
+                 is_ai_visible = 1
+             WHERE id = ? AND owner_user_id = ?`,
+            [
+                cleanBusinessName,
+                slug,
+                cleanDescription,
+                shortDescription,
+                cleanLocation,
+                cleanLocation,
+                cleanPhone,
+                cleanPhone,
+                email?.trim() || null,
+                website?.trim() || null,
+                instagram?.trim() || null,
+                cleanCategory,
+                "Estudiantes universitarios",
+                business.id,
+                req.user.id
+            ]
+        );
+
+        const [updatedBusiness] = await pool.execute(
+            "SELECT * FROM businesses WHERE id = ? LIMIT 1",
+            [business.id]
+        );
+
+        return res.json({
+            ok: true,
+            message: "Emprendimiento reenviado correctamente. Queda nuevamente pendiente de revisión.",
+            business: updatedBusiness[0]
+        });
+
+    } catch (error) {
+        console.error("BUSINESS_RESUBMIT_ERROR:", error);
+
+        if (error.code === "ER_DUP_ENTRY") {
+            return res.status(409).json({
+                ok: false,
+                message: "Ya existe un emprendimiento registrado con datos similares."
+            });
+        }
+
+        return res.status(500).json({
+            ok: false,
+            message: "Error interno al reenviar el emprendimiento.",
+            error: error.message
+        });
+    }
+});
+
+async function createUniqueSlug(name, ignoredBusinessId = null) {
     const baseSlug = slugify(name);
     let finalSlug = baseSlug;
     let counter = 1;
 
     while (true) {
-        const [existingSlug] = await pool.execute(
-            "SELECT id FROM businesses WHERE slug = ? LIMIT 1",
-            [finalSlug]
-        );
+        const query = ignoredBusinessId
+            ? "SELECT id FROM businesses WHERE slug = ? AND id <> ? LIMIT 1"
+            : "SELECT id FROM businesses WHERE slug = ? LIMIT 1";
+
+        const params = ignoredBusinessId
+            ? [finalSlug, ignoredBusinessId]
+            : [finalSlug];
+
+        const [existingSlug] = await pool.execute(query, params);
 
         if (existingSlug.length === 0) {
             return finalSlug;

@@ -38,10 +38,18 @@
             </p>
 
             <div class="business-status hidden" id="businessStatusBox">
-                <h2>Emprendimiento ya registrado</h2>
+                <h2 id="businessStatusTitle">Emprendimiento ya registrado</h2>
                 <p id="businessStatusText"></p>
 
+                <div class="rejection-reason hidden" id="rejectionReasonBox">
+                    <span>Razón del rechazo</span>
+                    <p id="rejectionReasonText"></p>
+                </div>
+
                 <div class="business-actions">
+                    <button class="auth-submit business-link-btn hidden" id="retryBusinessBtn" type="button">
+                        Volver a intentar
+                    </button>
                     <a href="dashboard.html" class="auth-submit business-link-btn">Ir al dashboard</a>
                     <button class="business-secondary-btn" id="logoutBtn" type="button">Cerrar sesión</button>
                 </div>

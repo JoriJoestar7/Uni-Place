@@ -160,6 +160,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${escapeHtml(business.description || "Sin descripción")}
                 </p>
 
+                ${business.rejection_reason ? `
+                    <div class="business-rejection-reason">
+                        <strong>Razón del rechazo</strong>
+                        <p>${escapeHtml(business.rejection_reason)}</p>
+                    </div>
+                ` : ""}
+
                 <div class="business-meta">
                     <p><strong>Ciudad:</strong> ${escapeHtml(business.city || "No registrada")}</p>
                     <p><strong>Dirección:</strong> ${escapeHtml(business.address || "No registrada")}</p>
@@ -206,6 +213,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function updateBusinessStatus(businessId, status) {
+        let rejectionReason = null;
+
+        if (status === "rejected") {
+            rejectionReason = prompt(
+                "Escribe la razón del rechazo. Esta razón será visible para el emprendedor:"
+            );
+
+            if (rejectionReason === null) {
+                showMessage("Rechazo cancelado.");
+                return;
+            }
+
+            rejectionReason = rejectionReason.trim();
+
+            if (rejectionReason.length < 10) {
+                showMessage("Para rechazar debes escribir una razón de al menos 10 caracteres.");
+                return;
+            }
+        }
+
         try {
             showMessage("Actualizando estado...");
 
@@ -215,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({ status })
+                body: JSON.stringify({ status, rejectionReason })
             });
 
             const data = await response.json();
@@ -246,4 +273,4 @@ document.addEventListener("DOMContentLoaded", () => {
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
     }
-});
+}); 

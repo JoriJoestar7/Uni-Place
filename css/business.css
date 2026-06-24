@@ -127,3 +127,35 @@
         width: 100%;
     }
 }
+
+.rejection-reason {
+    margin: 18px 0;
+    padding: 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.rejection-reason.hidden {
+    display: none;
+}
+
+.rejection-reason span {
+    display: block;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.48);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+
+.rejection-reason p {
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 0.78rem;
+    margin: 0;
+}
+
+.business-link-btn.hidden {
+    display: none;
+}

@@ -546,8 +546,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span>${content.label}</span>
                 <h2>${content.title}</h2>
                 <p>${content.text}</p>
+
+                ${content.action ? `
+                    <div class="dashboard-status-actions">
+                        <button class="dashboard-info-btn primary" type="button" data-retry-business>
+                            ${content.action}
+                        </button>
+                    </div>
+                ` : ""}
             </div>
         `;
+
+        const retryButton = banner.querySelector("[data-retry-business]");
+
+        if (retryButton) {
+            retryButton.addEventListener("click", () => {
+                window.location.href = "business-register.html";
+            });
+        }
 
         chatWindow.appendChild(banner);
     }
@@ -569,7 +585,8 @@ document.addEventListener("DOMContentLoaded", () => {
             rejected: {
                 label: "Emprendimiento rechazado",
                 title: `${businessName} fue rechazado`,
-                text: "Tu emprendimiento no será visible por ahora. Más adelante podrás editar la información y volver a mejorar su perfil."
+                text: "Tu emprendimiento no será visible por ahora. Puedes revisar la razón del rechazo, corregir la información y volver a enviarlo para revisión.",
+                action: "Ver razón y volver a intentar"
             },
             hidden: {
                 label: "Emprendimiento oculto",
@@ -699,6 +716,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             <div class="dashboard-info-grid">
                 ${createInfoRow("Estado", statusLabels[currentBusiness.status] || currentBusiness.status || "No registrado")}
+                ${currentBusiness.status === "rejected" ? createInfoRow("Razón del rechazo", currentBusiness.rejection_reason || "No registrada") : ""}
                 ${createInfoRow("Descripción corta", currentBusiness.short_description || "No registrada")}
                 ${createInfoRow("Descripción", currentBusiness.description || "No registrada")}
                 ${createInfoRow("Ciudad", currentBusiness.city || "No registrada")}
@@ -715,8 +733,9 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
             <div class="dashboard-info-note">
-                Futuro pendiente: permitir que el emprendedor edite esta información directamente.
-                Los cambios se guardarán automáticamente y el administrador podrá revisar un historial de modificaciones.
+                ${currentBusiness.status === "rejected"
+                    ? "Tu emprendimiento fue rechazado. Puedes usar el botón para ver la razón completa, corregir los datos y enviarlo nuevamente a revisión."
+                    : "Futuro pendiente: permitir que el emprendedor edite esta información directamente. Los cambios se guardarán automáticamente y el administrador podrá revisar un historial de modificaciones."}
             </div>
 
             <div class="dashboard-info-actions">
@@ -724,9 +743,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     Volver al chat
                 </button>
 
-                <button class="dashboard-info-btn" type="button" disabled>
-                    Editar próximamente
-                </button>
+                ${currentBusiness.status === "rejected" ? `
+                    <button class="dashboard-info-btn" type="button" id="retryRejectedBusinessBtn">
+                        Ver razón y volver a intentar
+                    </button>
+                ` : `
+                    <button class="dashboard-info-btn" type="button" disabled>
+                        Editar próximamente
+                    </button>
+                `}
             </div>
         `;
 
@@ -737,6 +762,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (backBtn) {
             backBtn.addEventListener("click", () => {
                 renderMessages();
+            });
+        }
+
+        const retryRejectedBusinessBtn = document.getElementById("retryRejectedBusinessBtn");
+
+        if (retryRejectedBusinessBtn) {
+            retryRejectedBusinessBtn.addEventListener("click", () => {
+                window.location.href = "business-register.html";
             });
         }
     }

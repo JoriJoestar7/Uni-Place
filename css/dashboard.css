@@ -729,6 +729,13 @@
     font-size: 0.76rem;
 }
 
+.dashboard-status-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
 .dashboard-info-card {
     max-width: 880px;
     margin: 0 auto 24px;
