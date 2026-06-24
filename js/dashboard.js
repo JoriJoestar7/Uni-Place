@@ -183,7 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (chatForm) {
-            chatForm.addEventListener("submit", (event) => {
+            chatForm.addEventListener("submit", async (event) => {
                 event.preventDefault();
 
                 const text = chatInput.value.trim();
@@ -201,10 +201,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 showTypingIndicator();
 
-                setTimeout(() => {
+                try {
+                    const data = await sendMessageToChatApi(text);
                     hideTypingIndicator();
-                    addMessage("assistant", generateAssistantResponse(text));
-                }, 650);
+
+                    addMessage(
+                        "assistant",
+                        data.reply,
+                        data.recommendedBusinesses || []
+                    );
+                } catch (error) {
+                    console.error("CHAT_FRONT_ERROR:", error);
+                    hideTypingIndicator();
+                    addMessage("assistant", buildOfflineFallback(text));
+                }
             });
         }
 
@@ -343,7 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return conversations.find((conversation) => conversation.id === activeConversationId);
     }
 
-    function addMessage(role, content) {
+    function addMessage(role, content, sources = []) {
         const conversation = getActiveConversation();
 
         if (!conversation) return;
@@ -351,6 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
         conversation.messages.push({
             role,
             content,
+            sources,
             createdAt: Date.now()
         });
 
@@ -523,6 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
             bubble.innerHTML = `
                 <span class="message-label">${label}</span>
                 <p>${formatMessageContent(message.content)}</p>
+                ${message.role === "assistant" ? createSourceCards(message.sources) : ""}
             `;
 
             messageElement.appendChild(bubble);
@@ -530,6 +542,55 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function createSourceCards(sources) {
+        if (!Array.isArray(sources) || sources.length === 0) return "";
+
+        const cards = sources.map((source) => {
+            const location = formatSourceLocation(source);
+            const contact = formatSourceContact(source);
+            const price = source.price_range ? `<span>${escapeHtml(source.price_range)}</span>` : "";
+            const schedule = source.schedule_summary ? `<span>${escapeHtml(source.schedule_summary)}</span>` : "";
+            const tokens = Array.isArray(source.matched_tokens) && source.matched_tokens.length > 0
+                ? `<small>Coincidencias: ${escapeHtml(source.matched_tokens.join(", "))}</small>`
+                : "";
+
+            return `
+                <article class="message-source-card">
+                    <div>
+                        <strong>${escapeHtml(source.business_name || "Emprendimiento UniPlace")}</strong>
+                        <p>${escapeHtml(source.short_description || source.category || "Negocio aprobado dentro de UniPlace.")}</p>
+                    </div>
+
+                    <div class="message-source-meta">
+                        ${source.category ? `<span>${escapeHtml(source.category)}</span>` : ""}
+                        ${price}
+                        ${location ? `<span>${escapeHtml(location)}</span>` : ""}
+                        ${schedule}
+                        ${contact ? `<span>${escapeHtml(contact)}</span>` : ""}
+                    </div>
+
+                    ${tokens}
+                </article>
+            `;
+        }).join("");
+
+        return `<div class="message-sources">${cards}</div>`;
+    }
+
+    function formatSourceLocation(source) {
+        return [source.city, source.campus_zone, source.address]
+            .filter(Boolean)
+            .join(" · ");
+    }
+
+    function formatSourceContact(source) {
+        if (source.whatsapp) return `WhatsApp: ${source.whatsapp}`;
+        if (source.phone) return `Tel: ${source.phone}`;
+        if (source.instagram_url) return `Instagram: ${source.instagram_url}`;
+        if (source.website_url) return `Web: ${source.website_url}`;
+        return "";
     }
 
     function renderUserStatusBanner() {
@@ -796,7 +857,29 @@ document.addEventListener("DOMContentLoaded", () => {
         addMessage("assistant", templates[template]);
     }
 
-    function generateAssistantResponse(userText) {
+    async function sendMessageToChatApi(userText) {
+        const response = await fetch(`${API_URL}/chat`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                message: userText,
+                conversationId: activeConversationId
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            throw new Error(data.message || "No se pudo generar la respuesta del chat.");
+        }
+
+        return data;
+    }
+
+    function buildOfflineFallback(userText) {
         const cleanText = userText.toLowerCase();
 
         if (currentBusiness?.status === "pending") {
@@ -804,7 +887,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (currentBusiness?.status === "rejected") {
-            return "Puedo ayudarte con temas académicos y organización de ideas. Tu emprendimiento aparece como rechazado, así que más adelante convendría editar la información del negocio.";
+            return "Puedo ayudarte con temas académicos y organización de ideas. Tu emprendimiento aparece como rechazado. Puedes revisar la razón y volver a enviar tu ficha completa desde el registro de emprendimiento.";
         }
 
         if (cleanText.includes("resumen")) {
@@ -812,25 +895,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (cleanText.includes("ensayo")) {
-            return "Perfecto. Para un ensayo académico puedo ayudarte con introducción, tesis, argumentos, desarrollo, conclusión y tono formal. También puedo ayudarte a hacerlo más humano y menos genérico.";
+            return "Perfecto. Para un ensayo académico puedo ayudarte con introducción, tesis, argumentos, desarrollo, conclusión y tono formal.";
         }
 
         if (cleanText.includes("examen") || cleanText.includes("estudiar")) {
             return "Podemos organizar un plan de estudio por temas, dificultad y tiempo disponible. También puedo convertir tus apuntes en preguntas de práctica.";
         }
 
-        if (cleanText.includes("cita") || cleanText.includes("apa")) {
-            return "Puedo ayudarte con formato APA, citas dentro del texto y referencias. Solo asegúrate de revisar los datos reales de cada fuente antes de entregar.";
-        }
-
-        if (
-            currentBusiness?.status === "approved" &&
-            (cleanText.includes("emprendimiento") || cleanText.includes("negocio") || cleanText.includes("mi negocio"))
-        ) {
-            return `Tu emprendimiento "${currentBusiness.business_name}" está aprobado. Más adelante podremos hacer que UniPlace lo use dentro de recomendaciones inteligentes para estudiantes.`;
-        }
-
-        return "Entendido. UniPlace puede ayudarte a ordenar esa idea, explicarla mejor o convertirla en un formato académico más claro. En una integración futura, esta respuesta vendría desde una API de IA real.";
+        return "No pude conectar con el motor de respuestas del backend en este momento. Revisa que el servidor esté corriendo en http://localhost:3000 y vuelve a intentarlo.";
     }
 
     function showTypingIndicator() {
