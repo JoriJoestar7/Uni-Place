@@ -4,14 +4,21 @@ import { verifyToken } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
+const DAYS = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday"
+];
+
 router.get("/me", verifyToken, async (req, res) => {
     try {
-        const [businesses] = await pool.execute(
-            "SELECT * FROM businesses WHERE owner_user_id = ? LIMIT 1",
-            [req.user.id]
-        );
+        const business = await getBusinessProfileByOwner(req.user.id);
 
-        if (businesses.length === 0) {
+        if (!business) {
             return res.status(404).json({
                 ok: false,
                 message: "No existe un emprendimiento registrado para este usuario."
@@ -20,7 +27,7 @@ router.get("/me", verifyToken, async (req, res) => {
 
         return res.json({
             ok: true,
-            business: businesses[0]
+            business
         });
 
     } catch (error) {
@@ -35,6 +42,8 @@ router.get("/me", verifyToken, async (req, res) => {
 });
 
 router.post("/register", verifyToken, async (req, res) => {
+    const connection = await pool.getConnection();
+
     try {
         if (req.user.role !== "entrepreneur") {
             return res.status(403).json({
@@ -43,115 +52,213 @@ router.post("/register", verifyToken, async (req, res) => {
             });
         }
 
-        const {
-            businessName,
-            category,
-            description,
-            phone,
-            email,
-            instagram,
-            website,
-            location
-        } = req.body;
+        const payload = normalizeBusinessPayload(req.body);
+        const validationMessage = validateBusinessPayload(payload);
 
-        if (!businessName || !category || !description || !phone) {
+        if (validationMessage) {
             return res.status(400).json({
                 ok: false,
-                message: "Completa los campos obligatorios del emprendimiento."
+                message: validationMessage
             });
         }
 
-        const [existingBusiness] = await pool.execute(
-            "SELECT id FROM businesses WHERE owner_user_id = ? LIMIT 1",
+        await connection.beginTransaction();
+
+        const [existingBusiness] = await connection.execute(
+            "SELECT id, slug, status FROM businesses WHERE owner_user_id = ? LIMIT 1",
             [req.user.id]
         );
 
+        let businessId;
+        let slug;
+        let previousStatus = null;
+
         if (existingBusiness.length > 0) {
-            return res.status(409).json({
-                ok: false,
-                message: "Este usuario ya tiene un emprendimiento registrado."
-            });
+            businessId = existingBusiness[0].id;
+            slug = existingBusiness[0].slug;
+            previousStatus = existingBusiness[0].status;
+
+            await connection.execute(
+                `UPDATE businesses SET
+                    business_name = ?,
+                    description = ?,
+                    short_description = ?,
+                    business_type = ?,
+                    category_label = ?,
+                    category_id = ?,
+                    city = ?,
+                    address = ?,
+                    campus_zone = ?,
+                    reference_point = ?,
+                    phone = ?,
+                    whatsapp = ?,
+                    email = ?,
+                    website_url = ?,
+                    instagram_url = ?,
+                    facebook_url = ?,
+                    tiktok_url = ?,
+                    price_min = ?,
+                    price_max = ?,
+                    payment_methods = ?,
+                    delivery_options = ?,
+                    service_area = ?,
+                    keywords = ?,
+                    target_audience = ?,
+                    main_products = ?,
+                    menu_summary = ?,
+                    schedule_summary = ?,
+                    faq_summary = ?,
+                    ai_extra_context = ?,
+                    status = 'pending',
+                    is_ai_visible = 0,
+                    rejection_reason = NULL,
+                    rejected_at = NULL,
+                    resubmitted_at = CURRENT_TIMESTAMP
+                WHERE id = ?`,
+                [
+                    payload.businessName,
+                    payload.description,
+                    payload.shortDescription,
+                    payload.businessType,
+                    payload.category,
+                    null,
+                    payload.city,
+                    payload.address,
+                    payload.campusZone,
+                    payload.referencePoint,
+                    payload.phone,
+                    payload.whatsapp,
+                    payload.email,
+                    payload.website,
+                    payload.instagram,
+                    payload.facebook,
+                    payload.tiktok,
+                    payload.priceMin,
+                    payload.priceMax,
+                    payload.paymentMethods,
+                    payload.deliveryOptions,
+                    payload.serviceArea,
+                    payload.keywords,
+                    payload.targetAudience,
+                    payload.mainProducts,
+                    payload.menuSummary,
+                    payload.scheduleSummary,
+                    payload.faqSummary,
+                    payload.aiExtraContext,
+                    businessId
+                ]
+            );
+
+        } else {
+            slug = await createUniqueSlug(payload.businessName, connection);
+
+            const [result] = await connection.execute(
+                `INSERT INTO businesses (
+                    owner_user_id,
+                    business_name,
+                    slug,
+                    description,
+                    short_description,
+                    business_type,
+                    category_label,
+                    category_id,
+                    city,
+                    address,
+                    campus_zone,
+                    reference_point,
+                    phone,
+                    whatsapp,
+                    email,
+                    website_url,
+                    instagram_url,
+                    facebook_url,
+                    tiktok_url,
+                    price_min,
+                    price_max,
+                    payment_methods,
+                    delivery_options,
+                    service_area,
+                    keywords,
+                    target_audience,
+                    main_products,
+                    menu_summary,
+                    schedule_summary,
+                    faq_summary,
+                    ai_extra_context,
+                    status,
+                    is_ai_visible
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0)`,
+                [
+                    req.user.id,
+                    payload.businessName,
+                    slug,
+                    payload.description,
+                    payload.shortDescription,
+                    payload.businessType,
+                    payload.category,
+                    null,
+                    payload.city,
+                    payload.address,
+                    payload.campusZone,
+                    payload.referencePoint,
+                    payload.phone,
+                    payload.whatsapp,
+                    payload.email,
+                    payload.website,
+                    payload.instagram,
+                    payload.facebook,
+                    payload.tiktok,
+                    payload.priceMin,
+                    payload.priceMax,
+                    payload.paymentMethods,
+                    payload.deliveryOptions,
+                    payload.serviceArea,
+                    payload.keywords,
+                    payload.targetAudience,
+                    payload.mainProducts,
+                    payload.menuSummary,
+                    payload.scheduleSummary,
+                    payload.faqSummary,
+                    payload.aiExtraContext
+                ]
+            );
+
+            businessId = result.insertId;
         }
 
-        const cleanBusinessName = businessName.trim();
-        const cleanCategory = category.trim();
-        const cleanDescription = description.trim();
-        const cleanPhone = phone.trim();
+        await replaceBusinessMenuItems(connection, businessId, payload.menuItems);
+        await replaceBusinessHours(connection, businessId, payload.hours);
+        await replaceBusinessFaqs(connection, businessId, payload.faqs);
 
-        const slug = await createUniqueSlug(cleanBusinessName);
+        const knowledgeText = buildBusinessKnowledgeText({
+            ...payload,
+            slug,
+            status: "pending"
+        });
 
-        const shortDescription =
-            cleanDescription.length > 280
-                ? `${cleanDescription.slice(0, 277)}...`
-                : cleanDescription;
+        await upsertAiKnowledge(connection, businessId, {
+            knowledgeText,
+            keywords: payload.keywords,
+            priorityScore: 70,
+            knowledgeStatus: "inactive"
+        });
 
-        const [result] = await pool.execute(
-            `INSERT INTO businesses (
-                owner_user_id,
-                business_name,
-                slug,
-                description,
-                short_description,
-                category_id,
-                city,
-                address,
-                phone,
-                whatsapp,
-                email,
-                website_url,
-                instagram_url,
-                keywords,
-                target_audience,
-                status,
-                is_ai_visible
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                req.user.id,
-                cleanBusinessName,
-                slug,
-                cleanDescription,
-                shortDescription,
-                null,
-                location?.trim() || null,
-                location?.trim() || null,
-                cleanPhone,
-                cleanPhone,
-                email?.trim() || null,
-                website?.trim() || null,
-                instagram?.trim() || null,
-                cleanCategory,
-                "Estudiantes universitarios",
-                "pending",
-                1
-            ]
-        );
+        await connection.commit();
 
-        return res.status(201).json({
+        const business = await getBusinessProfileById(businessId);
+
+        return res.status(existingBusiness.length > 0 ? 200 : 201).json({
             ok: true,
-            message: "Emprendimiento registrado correctamente. Queda pendiente de revisión.",
-            business: {
-                id: result.insertId,
-                owner_user_id: req.user.id,
-                business_name: cleanBusinessName,
-                slug,
-                description: cleanDescription,
-                short_description: shortDescription,
-                category: cleanCategory,
-                city: location?.trim() || null,
-                address: location?.trim() || null,
-                phone: cleanPhone,
-                whatsapp: cleanPhone,
-                email: email?.trim() || null,
-                website_url: website?.trim() || null,
-                instagram_url: instagram?.trim() || null,
-                keywords: cleanCategory,
-                target_audience: "Estudiantes universitarios",
-                status: "pending",
-                is_ai_visible: 1
-            }
+            message: existingBusiness.length > 0
+                ? "Ficha actualizada correctamente. El emprendimiento volvió a quedar pendiente de revisión."
+                : "Emprendimiento registrado correctamente. Queda pendiente de revisión.",
+            previousStatus,
+            business
         });
 
     } catch (error) {
+        await connection.rollback();
+
         console.error("BUSINESS_REGISTER_ERROR:", error);
 
         if (error.code === "ER_DUP_ENTRY") {
@@ -166,155 +273,348 @@ router.post("/register", verifyToken, async (req, res) => {
             message: "Error interno al registrar el emprendimiento.",
             error: error.message
         });
+    } finally {
+        connection.release();
     }
 });
 
+async function getBusinessProfileByOwner(ownerUserId) {
+    const [businesses] = await pool.execute(
+        "SELECT * FROM businesses WHERE owner_user_id = ? LIMIT 1",
+        [ownerUserId]
+    );
 
-router.patch("/resubmit", verifyToken, async (req, res) => {
-    try {
-        if (req.user.role !== "entrepreneur") {
-            return res.status(403).json({
-                ok: false,
-                message: "Solo las cuentas de emprendimiento pueden reenviar un negocio."
-            });
-        }
+    if (businesses.length === 0) return null;
 
-        const {
-            businessName,
-            category,
-            description,
-            phone,
-            email,
-            instagram,
-            website,
-            location
-        } = req.body;
+    return enrichBusinessProfile(businesses[0]);
+}
 
-        if (!businessName || !category || !description || !phone) {
-            return res.status(400).json({
-                ok: false,
-                message: "Completa los campos obligatorios del emprendimiento."
-            });
-        }
+async function getBusinessProfileById(businessId) {
+    const [businesses] = await pool.execute(
+        "SELECT * FROM businesses WHERE id = ? LIMIT 1",
+        [businessId]
+    );
 
-        const [existingBusiness] = await pool.execute(
-            "SELECT id, status FROM businesses WHERE owner_user_id = ? LIMIT 1",
-            [req.user.id]
-        );
+    if (businesses.length === 0) return null;
 
-        if (existingBusiness.length === 0) {
-            return res.status(404).json({
-                ok: false,
-                message: "No tienes un emprendimiento registrado para reenviar."
-            });
-        }
+    return enrichBusinessProfile(businesses[0]);
+}
 
-        const business = existingBusiness[0];
+async function enrichBusinessProfile(business) {
+    const [menuItems] = await pool.execute(
+        `SELECT id, item_name, item_description, item_category, price, is_available
+         FROM business_menu_items
+         WHERE business_id = ?
+         ORDER BY id ASC`,
+        [business.id]
+    );
 
-        if (business.status !== "rejected") {
-            return res.status(409).json({
-                ok: false,
-                message: "Solo puedes volver a enviar un emprendimiento que fue rechazado."
-            });
-        }
+    const [hours] = await pool.execute(
+        `SELECT id, day_of_week, opening_time, closing_time, is_closed, notes
+         FROM business_hours
+         WHERE business_id = ?
+         ORDER BY FIELD(day_of_week, 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')`,
+        [business.id]
+    );
 
-        const cleanBusinessName = businessName.trim();
-        const cleanCategory = category.trim();
-        const cleanDescription = description.trim();
-        const cleanPhone = phone.trim();
-        const cleanLocation = location?.trim() || null;
+    const [faqs] = await pool.execute(
+        `SELECT id, question, answer
+         FROM business_faqs
+         WHERE business_id = ?
+         ORDER BY id ASC`,
+        [business.id]
+    );
 
-        const slug = await createUniqueSlug(cleanBusinessName, business.id);
+    const [knowledgeRows] = await pool.execute(
+        `SELECT id, knowledge_text, keywords, priority_score, knowledge_status, last_generated_at
+         FROM business_ai_knowledge
+         WHERE business_id = ?
+         LIMIT 1`,
+        [business.id]
+    );
 
-        const shortDescription =
-            cleanDescription.length > 280
-                ? `${cleanDescription.slice(0, 277)}...`
-                : cleanDescription;
+    return {
+        ...business,
+        menu_items: menuItems,
+        hours,
+        faqs,
+        ai_knowledge: knowledgeRows[0] || null
+    };
+}
 
-        await pool.execute(
-            `UPDATE businesses
-             SET business_name = ?,
-                 slug = ?,
-                 description = ?,
-                 short_description = ?,
-                 city = ?,
-                 address = ?,
-                 phone = ?,
-                 whatsapp = ?,
-                 email = ?,
-                 website_url = ?,
-                 instagram_url = ?,
-                 keywords = ?,
-                 target_audience = ?,
-                 status = 'pending',
-                 rejection_reason = NULL,
-                 rejected_at = NULL,
-                 resubmitted_at = NOW(),
-                 is_ai_visible = 1
-             WHERE id = ? AND owner_user_id = ?`,
+function normalizeBusinessPayload(body) {
+    const menuItems = Array.isArray(body.menuItems) ? body.menuItems : [];
+    const hours = Array.isArray(body.hours) ? body.hours : [];
+    const faqs = Array.isArray(body.faqs) ? body.faqs : [];
+
+    const description = cleanText(body.description);
+    const shortDescription = cleanText(body.shortDescription) || createShortDescription(description);
+
+    return {
+        businessName: cleanText(body.businessName),
+        businessType: cleanText(body.businessType),
+        category: cleanText(body.category),
+        description,
+        shortDescription,
+        city: cleanText(body.city),
+        address: cleanText(body.address),
+        campusZone: cleanText(body.campusZone),
+        referencePoint: cleanText(body.referencePoint),
+        phone: cleanText(body.phone),
+        whatsapp: cleanText(body.whatsapp) || cleanText(body.phone),
+        email: cleanText(body.email),
+        website: cleanText(body.website),
+        instagram: cleanText(body.instagram),
+        facebook: cleanText(body.facebook),
+        tiktok: cleanText(body.tiktok),
+        priceMin: parseOptionalNumber(body.priceMin),
+        priceMax: parseOptionalNumber(body.priceMax),
+        paymentMethods: cleanText(body.paymentMethods),
+        deliveryOptions: cleanText(body.deliveryOptions),
+        serviceArea: cleanText(body.serviceArea),
+        keywords: cleanText(body.keywords || body.category),
+        targetAudience: cleanText(body.targetAudience) || "Estudiantes universitarios",
+        mainProducts: cleanText(body.mainProducts),
+        menuSummary: cleanText(body.menuSummary),
+        scheduleSummary: cleanText(body.scheduleSummary),
+        faqSummary: cleanText(body.faqSummary),
+        aiExtraContext: cleanText(body.aiExtraContext),
+        menuItems: menuItems
+            .map(normalizeMenuItem)
+            .filter((item) => item.itemName),
+        hours: normalizeHours(hours),
+        faqs: faqs
+            .map(normalizeFaq)
+            .filter((faq) => faq.question && faq.answer)
+    };
+}
+
+function validateBusinessPayload(payload) {
+    if (!payload.businessName || !payload.businessType || !payload.category) {
+        return "Completa nombre, tipo y categoría del emprendimiento.";
+    }
+
+    if (!payload.description || payload.description.length < 30) {
+        return "La descripción completa debe tener al menos 30 caracteres.";
+    }
+
+    if (!payload.shortDescription || payload.shortDescription.length < 15) {
+        return "La descripción corta debe tener al menos 15 caracteres.";
+    }
+
+    if (!payload.phone || !payload.whatsapp) {
+        return "Completa teléfono y WhatsApp del emprendimiento.";
+    }
+
+    if (!payload.city || !payload.address) {
+        return "Completa ciudad y dirección o punto de referencia.";
+    }
+
+    if (payload.menuItems.length === 0 && !payload.menuSummary && !payload.mainProducts) {
+        return "Agrega al menos un producto/servicio, menú o resumen de oferta.";
+    }
+
+    if (payload.hours.length === 0 && !payload.scheduleSummary) {
+        return "Agrega al menos un horario de atención o un resumen de horarios.";
+    }
+
+    return null;
+}
+
+function normalizeMenuItem(item) {
+    return {
+        itemName: cleanText(item.itemName || item.name),
+        itemDescription: cleanText(item.itemDescription || item.description),
+        itemCategory: cleanText(item.itemCategory || item.category),
+        price: parseOptionalNumber(item.price),
+        isAvailable: item.isAvailable === false ? 0 : 1
+    };
+}
+
+function normalizeHours(hours) {
+    return hours
+        .map((item) => ({
+            dayOfWeek: DAYS.includes(item.dayOfWeek) ? item.dayOfWeek : null,
+            openingTime: cleanTime(item.openingTime),
+            closingTime: cleanTime(item.closingTime),
+            isClosed: item.isClosed ? 1 : 0,
+            notes: cleanText(item.notes)
+        }))
+        .filter((item) => {
+            if (!item.dayOfWeek) return false;
+            if (item.isClosed) return true;
+            return item.openingTime && item.closingTime;
+        });
+}
+
+function normalizeFaq(item) {
+    return {
+        question: cleanText(item.question),
+        answer: cleanText(item.answer)
+    };
+}
+
+async function replaceBusinessMenuItems(connection, businessId, menuItems) {
+    await connection.execute(
+        "DELETE FROM business_menu_items WHERE business_id = ?",
+        [businessId]
+    );
+
+    for (const item of menuItems) {
+        await connection.execute(
+            `INSERT INTO business_menu_items (
+                business_id,
+                item_name,
+                item_description,
+                item_category,
+                price,
+                is_available
+            ) VALUES (?, ?, ?, ?, ?, ?)`,
             [
-                cleanBusinessName,
-                slug,
-                cleanDescription,
-                shortDescription,
-                cleanLocation,
-                cleanLocation,
-                cleanPhone,
-                cleanPhone,
-                email?.trim() || null,
-                website?.trim() || null,
-                instagram?.trim() || null,
-                cleanCategory,
-                "Estudiantes universitarios",
-                business.id,
-                req.user.id
+                businessId,
+                item.itemName,
+                item.itemDescription,
+                item.itemCategory,
+                item.price,
+                item.isAvailable
             ]
         );
-
-        const [updatedBusiness] = await pool.execute(
-            "SELECT * FROM businesses WHERE id = ? LIMIT 1",
-            [business.id]
-        );
-
-        return res.json({
-            ok: true,
-            message: "Emprendimiento reenviado correctamente. Queda nuevamente pendiente de revisión.",
-            business: updatedBusiness[0]
-        });
-
-    } catch (error) {
-        console.error("BUSINESS_RESUBMIT_ERROR:", error);
-
-        if (error.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({
-                ok: false,
-                message: "Ya existe un emprendimiento registrado con datos similares."
-            });
-        }
-
-        return res.status(500).json({
-            ok: false,
-            message: "Error interno al reenviar el emprendimiento.",
-            error: error.message
-        });
     }
-});
+}
 
-async function createUniqueSlug(name, ignoredBusinessId = null) {
+async function replaceBusinessHours(connection, businessId, hours) {
+    await connection.execute(
+        "DELETE FROM business_hours WHERE business_id = ?",
+        [businessId]
+    );
+
+    for (const item of hours) {
+        await connection.execute(
+            `INSERT INTO business_hours (
+                business_id,
+                day_of_week,
+                opening_time,
+                closing_time,
+                is_closed,
+                notes
+            ) VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+                businessId,
+                item.dayOfWeek,
+                item.openingTime,
+                item.closingTime,
+                item.isClosed,
+                item.notes
+            ]
+        );
+    }
+}
+
+async function replaceBusinessFaqs(connection, businessId, faqs) {
+    await connection.execute(
+        "DELETE FROM business_faqs WHERE business_id = ?",
+        [businessId]
+    );
+
+    for (const item of faqs) {
+        await connection.execute(
+            `INSERT INTO business_faqs (
+                business_id,
+                question,
+                answer
+            ) VALUES (?, ?, ?)`,
+            [businessId, item.question, item.answer]
+        );
+    }
+}
+
+async function upsertAiKnowledge(connection, businessId, data) {
+    await connection.execute(
+        `INSERT INTO business_ai_knowledge (
+            business_id,
+            knowledge_text,
+            keywords,
+            priority_score,
+            knowledge_status,
+            last_generated_at
+        ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON DUPLICATE KEY UPDATE
+            knowledge_text = VALUES(knowledge_text),
+            keywords = VALUES(keywords),
+            priority_score = VALUES(priority_score),
+            knowledge_status = VALUES(knowledge_status),
+            last_generated_at = CURRENT_TIMESTAMP`,
+        [
+            businessId,
+            data.knowledgeText,
+            data.keywords,
+            data.priorityScore,
+            data.knowledgeStatus
+        ]
+    );
+}
+
+function buildBusinessKnowledgeText(payload) {
+    const menuText = payload.menuItems.length > 0
+        ? payload.menuItems
+            .map((item) => `- ${item.itemName}${item.itemCategory ? ` (${item.itemCategory})` : ""}${item.price !== null ? `: $${item.price}` : ""}${item.itemDescription ? `. ${item.itemDescription}` : ""}`)
+            .join("\n")
+        : payload.menuSummary || payload.mainProducts || "No se registró menú detallado.";
+
+    const hoursText = payload.hours.length > 0
+        ? payload.hours
+            .map((item) => {
+                if (item.isClosed) return `- ${translateDay(item.dayOfWeek)}: cerrado${item.notes ? ` (${item.notes})` : ""}`;
+                return `- ${translateDay(item.dayOfWeek)}: ${item.openingTime} a ${item.closingTime}${item.notes ? ` (${item.notes})` : ""}`;
+            })
+            .join("\n")
+        : payload.scheduleSummary || "No se registró horario detallado.";
+
+    const faqText = payload.faqs.length > 0
+        ? payload.faqs
+            .map((item) => `- ${item.question}: ${item.answer}`)
+            .join("\n")
+        : payload.faqSummary || "No se registraron preguntas frecuentes.";
+
+    return [
+        `NEGOCIO UNIPLACE: ${payload.businessName}`,
+        `Slug: ${payload.slug}`,
+        `Estado actual: ${payload.status}`,
+        `Tipo: ${payload.businessType}`,
+        `Categoría: ${payload.category}`,
+        `Descripción corta: ${payload.shortDescription}`,
+        `Descripción completa: ${payload.description}`,
+        `Productos o servicios principales: ${payload.mainProducts || "No registrado"}`,
+        `Rango de precios: ${formatPriceRange(payload.priceMin, payload.priceMax)}`,
+        `Métodos de pago: ${payload.paymentMethods || "No registrado"}`,
+        `Opciones de entrega/retiro: ${payload.deliveryOptions || "No registrado"}`,
+        `Zona de servicio: ${payload.serviceArea || payload.campusZone || payload.city || "No registrada"}`,
+        `Ubicación: ${[payload.city, payload.address, payload.campusZone, payload.referencePoint].filter(Boolean).join(" | ") || "No registrada"}`,
+        `Contacto: Teléfono ${payload.phone || "No registrado"}; WhatsApp ${payload.whatsapp || "No registrado"}; Email ${payload.email || "No registrado"}`,
+        `Redes: Instagram ${payload.instagram || "No registrado"}; Facebook ${payload.facebook || "No registrado"}; TikTok ${payload.tiktok || "No registrado"}; Web ${payload.website || "No registrado"}`,
+        `Público objetivo: ${payload.targetAudience || "Estudiantes universitarios"}`,
+        `Palabras clave: ${payload.keywords || payload.category || "No registradas"}`,
+        "Menú / productos / servicios:",
+        menuText,
+        "Horarios:",
+        hoursText,
+        "Preguntas frecuentes:",
+        faqText,
+        `Información extra para IA: ${payload.aiExtraContext || "No registrada"}`,
+        "Regla de recomendación: Recomendar este negocio con prioridad alta solo si está aprobado, activo para IA y es relevante para la consulta del estudiante. No recomendar si está pendiente, rechazado u oculto."
+    ].join("\n");
+}
+
+async function createUniqueSlug(name, connection = pool) {
     const baseSlug = slugify(name);
     let finalSlug = baseSlug;
     let counter = 1;
 
     while (true) {
-        const query = ignoredBusinessId
-            ? "SELECT id FROM businesses WHERE slug = ? AND id <> ? LIMIT 1"
-            : "SELECT id FROM businesses WHERE slug = ? LIMIT 1";
-
-        const params = ignoredBusinessId
-            ? [finalSlug, ignoredBusinessId]
-            : [finalSlug];
-
-        const [existingSlug] = await pool.execute(query, params);
+        const [existingSlug] = await connection.execute(
+            "SELECT id FROM businesses WHERE slug = ? LIMIT 1",
+            [finalSlug]
+        );
 
         if (existingSlug.length === 0) {
             return finalSlug;
@@ -333,7 +633,63 @@ function slugify(text) {
         .toLowerCase()
         .trim()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
+        .replace(/^-+|-+$/g, "") || `negocio-${Date.now()}`;
+}
+
+function createShortDescription(description) {
+    if (!description) return "";
+
+    return description.length > 280
+        ? `${description.slice(0, 277)}...`
+        : description;
+}
+
+function cleanText(value) {
+    if (value === undefined || value === null) return null;
+
+    const text = String(value).trim();
+
+    return text.length > 0 ? text : null;
+}
+
+function parseOptionalNumber(value) {
+    if (value === undefined || value === null || value === "") return null;
+
+    const parsed = Number(value);
+
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function cleanTime(value) {
+    const text = cleanText(value);
+
+    if (!text) return null;
+
+    if (/^\d{2}:\d{2}$/.test(text)) return text;
+    if (/^\d{2}:\d{2}:\d{2}$/.test(text)) return text.slice(0, 5);
+
+    return null;
+}
+
+function translateDay(day) {
+    const labels = {
+        monday: "Lunes",
+        tuesday: "Martes",
+        wednesday: "Miércoles",
+        thursday: "Jueves",
+        friday: "Viernes",
+        saturday: "Sábado",
+        sunday: "Domingo"
+    };
+
+    return labels[day] || day;
+}
+
+function formatPriceRange(min, max) {
+    if (min !== null && max !== null) return `$${min} - $${max}`;
+    if (min !== null) return `Desde $${min}`;
+    if (max !== null) return `Hasta $${max}`;
+    return "No registrado";
 }
 
 export default router;

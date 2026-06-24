@@ -546,24 +546,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span>${content.label}</span>
                 <h2>${content.title}</h2>
                 <p>${content.text}</p>
-
-                ${content.action ? `
-                    <div class="dashboard-status-actions">
-                        <button class="dashboard-info-btn primary" type="button" data-retry-business>
-                            ${content.action}
-                        </button>
-                    </div>
-                ` : ""}
+                ${content.action ? `<a href="${content.action.href}" class="dashboard-status-action">${content.action.label}</a>` : ""}
             </div>
         `;
-
-        const retryButton = banner.querySelector("[data-retry-business]");
-
-        if (retryButton) {
-            retryButton.addEventListener("click", () => {
-                window.location.href = "business-register.html";
-            });
-        }
 
         chatWindow.appendChild(banner);
     }
@@ -585,8 +570,13 @@ document.addEventListener("DOMContentLoaded", () => {
             rejected: {
                 label: "Emprendimiento rechazado",
                 title: `${businessName} fue rechazado`,
-                text: "Tu emprendimiento no será visible por ahora. Puedes revisar la razón del rechazo, corregir la información y volver a enviarlo para revisión.",
-                action: "Ver razón y volver a intentar"
+                text: business.rejection_reason
+                    ? `Razón del rechazo: ${business.rejection_reason}. Puedes corregir tu ficha completa y volver a enviarla a revisión.`
+                    : "Tu emprendimiento no será visible por ahora. Puedes revisar tu ficha completa y volver a enviarla a revisión.",
+                action: {
+                    label: "Ver razón y volver a intentar",
+                    href: "business-register.html"
+                }
             },
             hidden: {
                 label: "Emprendimiento oculto",
@@ -710,32 +700,39 @@ document.addEventListener("DOMContentLoaded", () => {
             <h2>${escapeHtml(currentBusiness.business_name || "Mi emprendimiento")}</h2>
 
             <p class="dashboard-info-description">
-                Aquí puedes revisar la información registrada de tu emprendimiento.
-                En una siguiente etapa agregaremos la opción para modificar estos datos directamente.
+                Aquí puedes revisar la información registrada de tu emprendimiento y el estado de su base de conocimiento para IA.
+                Si actualizas la ficha, volverá a revisión para mantener la calidad de las recomendaciones.
             </p>
 
             <div class="dashboard-info-grid">
                 ${createInfoRow("Estado", statusLabels[currentBusiness.status] || currentBusiness.status || "No registrado")}
-                ${currentBusiness.status === "rejected" ? createInfoRow("Razón del rechazo", currentBusiness.rejection_reason || "No registrada") : ""}
+                ${currentBusiness.rejection_reason ? createInfoRow("Razón de rechazo", currentBusiness.rejection_reason) : ""}
+                ${createInfoRow("Tipo", currentBusiness.business_type || "No registrado")}
                 ${createInfoRow("Descripción corta", currentBusiness.short_description || "No registrada")}
                 ${createInfoRow("Descripción", currentBusiness.description || "No registrada")}
                 ${createInfoRow("Ciudad", currentBusiness.city || "No registrada")}
+                ${createInfoRow("Zona / campus", currentBusiness.campus_zone || "No registrada")}
                 ${createInfoRow("Dirección", currentBusiness.address || "No registrada")}
+                ${createInfoRow("Referencia", currentBusiness.reference_point || "No registrada")}
                 ${createInfoRow("Teléfono", currentBusiness.phone || "No registrado")}
                 ${createInfoRow("WhatsApp", currentBusiness.whatsapp || "No registrado")}
                 ${createInfoRow("Correo", currentBusiness.email || "No registrado")}
                 ${createInfoRow("Instagram", currentBusiness.instagram_url || "No registrado")}
                 ${createInfoRow("Sitio web", currentBusiness.website_url || "No registrado")}
+                ${createInfoRow("Rango de precios", formatBusinessPriceRange(currentBusiness.price_min, currentBusiness.price_max))}
+                ${createInfoRow("Métodos de pago", currentBusiness.payment_methods || "No registrados")}
+                ${createInfoRow("Entrega / retiro", currentBusiness.delivery_options || "No registrado")}
+                ${createInfoRow("Productos principales", currentBusiness.main_products || "No registrados")}
                 ${createInfoRow("Keywords", currentBusiness.keywords || "No registradas")}
                 ${createInfoRow("Público objetivo", currentBusiness.target_audience || "No registrado")}
                 ${createInfoRow("Visible para IA", currentBusiness.is_ai_visible ? "Sí" : "No")}
+                ${createInfoRow("Base IA", currentBusiness.ai_knowledge?.knowledge_status || "No generada")}
+                ${createInfoRow("Prioridad IA", currentBusiness.ai_knowledge?.priority_score ?? "No generada")}
                 ${createInfoRow("Fecha de registro", formatDate(currentBusiness.created_at))}
             </div>
 
             <div class="dashboard-info-note">
-                ${currentBusiness.status === "rejected"
-                    ? "Tu emprendimiento fue rechazado. Puedes usar el botón para ver la razón completa, corregir los datos y enviarlo nuevamente a revisión."
-                    : "Futuro pendiente: permitir que el emprendedor edite esta información directamente. Los cambios se guardarán automáticamente y el administrador podrá revisar un historial de modificaciones."}
+                La IA solo usará esta información para recomendaciones cuando el emprendimiento esté aprobado, visible y con base de conocimiento activa.
             </div>
 
             <div class="dashboard-info-actions">
@@ -743,21 +740,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     Volver al chat
                 </button>
 
-                ${currentBusiness.status === "rejected" ? `
-                    <button class="dashboard-info-btn" type="button" id="retryRejectedBusinessBtn">
-                        Ver razón y volver a intentar
-                    </button>
-                ` : `
-                    <button class="dashboard-info-btn" type="button" disabled>
-                        Editar próximamente
-                    </button>
-                `}
+                <button class="dashboard-info-btn" type="button" id="editBusinessProfileBtn">
+                    Editar ficha completa
+                </button>
             </div>
         `;
 
         chatWindow.appendChild(card);
 
         const backBtn = document.getElementById("backToChatFromBusiness");
+        const editBtn = document.getElementById("editBusinessProfileBtn");
 
         if (backBtn) {
             backBtn.addEventListener("click", () => {
@@ -765,13 +757,18 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-        const retryRejectedBusinessBtn = document.getElementById("retryRejectedBusinessBtn");
-
-        if (retryRejectedBusinessBtn) {
-            retryRejectedBusinessBtn.addEventListener("click", () => {
+        if (editBtn) {
+            editBtn.addEventListener("click", () => {
                 window.location.href = "business-register.html";
             });
         }
+    }
+
+    function formatBusinessPriceRange(min, max) {
+        if (min !== null && min !== undefined && max !== null && max !== undefined) return `$${min} - $${max}`;
+        if (min !== null && min !== undefined) return `Desde $${min}`;
+        if (max !== null && max !== undefined) return `Hasta $${max}`;
+        return "No registrado";
     }
 
     function openTemplateMessage(template) {

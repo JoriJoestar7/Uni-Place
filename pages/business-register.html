@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar emprendimiento | UniPlace</title>
+    <title>Ficha completa del emprendimiento | UniPlace</title>
 
     <link rel="icon" href="../assets/icon.png">
     <link rel="stylesheet" href="../css/style.css">
@@ -27,81 +27,252 @@
                 <span>UniPlace</span>
             </a>
 
-            <div class="auth-heading">
-                <p>Cuenta de emprendimiento</p>
-                <h1>Registra tu negocio</h1>
+            <div class="auth-heading business-heading">
+                <p>Base de conocimiento IA</p>
+                <h1>Ficha completa</h1>
             </div>
 
             <p class="business-intro">
-                Completa la información principal de tu emprendimiento. El registro quedará en estado pendiente
-                mientras se revisa dentro de UniPlace.
+                Completa la información más importante de tu emprendimiento. Estos datos se guardarán en SQL y
+                UniPlace generará automáticamente un bloque de conocimiento para que la IA pueda recomendar tu negocio
+                con prioridad cuando sea aprobado y la consulta del estudiante sea relevante.
             </p>
 
             <div class="business-status hidden" id="businessStatusBox">
-                <h2 id="businessStatusTitle">Emprendimiento ya registrado</h2>
+                <h2 id="businessStatusTitle">Estado del emprendimiento</h2>
                 <p id="businessStatusText"></p>
-
-                <div class="rejection-reason hidden" id="rejectionReasonBox">
-                    <span>Razón del rechazo</span>
-                    <p id="rejectionReasonText"></p>
-                </div>
-
-                <div class="business-actions">
-                    <button class="auth-submit business-link-btn hidden" id="retryBusinessBtn" type="button">
-                        Volver a intentar
-                    </button>
-                    <a href="dashboard.html" class="auth-submit business-link-btn">Ir al dashboard</a>
-                    <button class="business-secondary-btn" id="logoutBtn" type="button">Cerrar sesión</button>
-                </div>
+                <p class="business-rejection hidden" id="businessRejectionText"></p>
             </div>
 
             <form class="auth-form business-form" id="businessForm">
-                <label>
-                    Nombre del emprendimiento *
-                    <input type="text" id="businessName" placeholder="Ej: Café Universitario">
-                </label>
+                <section class="business-form-section business-full">
+                    <div class="business-section-heading">
+                        <span>01</span>
+                        <div>
+                            <h2>Identidad del negocio</h2>
+                            <p>Información general que ayuda a la IA a entender qué haces y cuándo recomendarte.</p>
+                        </div>
+                    </div>
 
-                <label>
-                    Categoría *
-                    <input type="text" id="category" placeholder="Ej: Comida, ropa, tecnología, servicios">
-                </label>
+                    <div class="business-grid-2">
+                        <label>
+                            Nombre del emprendimiento *
+                            <input type="text" id="businessName" placeholder="Ej: Café Universitario">
+                        </label>
 
-                <label class="business-full">
-                    Descripción *
-                    <textarea id="description" rows="4" placeholder="Describe qué vende o qué ofrece tu emprendimiento"></textarea>
-                </label>
+                        <label>
+                            Tipo de emprendimiento *
+                            <input type="text" id="businessType" placeholder="Ej: Cafetería, tienda, servicio académico">
+                        </label>
 
-                <label>
-                    Teléfono / WhatsApp *
-                    <input type="text" id="phone" placeholder="Ej: 0987654321">
-                </label>
+                        <label>
+                            Categoría principal *
+                            <input type="text" id="category" placeholder="Ej: Comida y bebidas">
+                        </label>
 
-                <label>
-                    Correo del negocio
-                    <input type="email" id="businessEmail" placeholder="negocio@correo.com">
-                </label>
+                        <label>
+                            Público objetivo
+                            <input type="text" id="targetAudience" placeholder="Ej: estudiantes, docentes, administrativos">
+                        </label>
+                    </div>
 
-                <label>
-                    Instagram
-                    <input type="text" id="instagram" placeholder="@tuemprendimiento">
-                </label>
+                    <label>
+                        Descripción corta *
+                        <input type="text" id="shortDescription" placeholder="Una frase clara sobre lo que ofrece tu negocio">
+                    </label>
 
-                <label>
-                    Sitio web
-                    <input type="text" id="website" placeholder="https://...">
-                </label>
+                    <label>
+                        Descripción completa *
+                        <textarea id="description" rows="5" placeholder="Cuenta qué vendes, qué problema resuelves, qué te diferencia y por qué deberían elegirte"></textarea>
+                    </label>
 
-                <label class="business-full">
-                    Ubicación
-                    <input type="text" id="location" placeholder="Ej: Quito, Universidad Salesiana, campus sur">
-                </label>
+                    <label>
+                        Palabras clave para la IA
+                        <textarea id="keywords" rows="3" placeholder="Ej: café, snacks, barato, rápido, desayuno, estudiantes, UPS, Quito"></textarea>
+                    </label>
+                </section>
+
+                <section class="business-form-section business-full">
+                    <div class="business-section-heading">
+                        <span>02</span>
+                        <div>
+                            <h2>Ubicación y contacto</h2>
+                            <p>Mientras más precisa sea esta sección, mejor podrá recomendarte UniPlace.</p>
+                        </div>
+                    </div>
+
+                    <div class="business-grid-2">
+                        <label>
+                            Ciudad *
+                            <input type="text" id="city" placeholder="Ej: Quito">
+                        </label>
+
+                        <label>
+                            Zona / campus
+                            <input type="text" id="campusZone" placeholder="Ej: UPS Sur, campus Girón, La Floresta">
+                        </label>
+
+                        <label>
+                            Dirección o punto de entrega *
+                            <input type="text" id="address" placeholder="Ej: Av. Rumichaca y Morán Valverde">
+                        </label>
+
+                        <label>
+                            Referencia
+                            <input type="text" id="referencePoint" placeholder="Ej: frente a biblioteca, cerca de la entrada principal">
+                        </label>
+
+                        <label>
+                            Teléfono *
+                            <input type="text" id="phone" placeholder="Ej: 0987654321">
+                        </label>
+
+                        <label>
+                            WhatsApp *
+                            <input type="text" id="whatsapp" placeholder="Ej: 0987654321">
+                        </label>
+
+                        <label>
+                            Correo del negocio
+                            <input type="email" id="businessEmail" placeholder="negocio@correo.com">
+                        </label>
+
+                        <label>
+                            Instagram
+                            <input type="text" id="instagram" placeholder="@tuemprendimiento">
+                        </label>
+
+                        <label>
+                            Facebook
+                            <input type="text" id="facebook" placeholder="Link o nombre de página">
+                        </label>
+
+                        <label>
+                            TikTok
+                            <input type="text" id="tiktok" placeholder="@tuemprendimiento">
+                        </label>
+
+                        <label class="business-full">
+                            Sitio web
+                            <input type="text" id="website" placeholder="https://...">
+                        </label>
+                    </div>
+                </section>
+
+                <section class="business-form-section business-full">
+                    <div class="business-section-heading">
+                        <span>03</span>
+                        <div>
+                            <h2>Menú, productos y precios</h2>
+                            <p>Agrega productos, servicios, combos o paquetes. Esto alimenta directamente la base de conocimiento de la IA.</p>
+                        </div>
+                    </div>
+
+                    <div class="business-grid-2">
+                        <label>
+                            Precio mínimo aproximado
+                            <input type="number" min="0" step="0.01" id="priceMin" placeholder="Ej: 1.50">
+                        </label>
+
+                        <label>
+                            Precio máximo aproximado
+                            <input type="number" min="0" step="0.01" id="priceMax" placeholder="Ej: 12.00">
+                        </label>
+                    </div>
+
+                    <label>
+                        Productos o servicios principales
+                        <textarea id="mainProducts" rows="3" placeholder="Ej: café, sanduches, postres, combos para estudiantes, almuerzos bajo pedido"></textarea>
+                    </label>
+
+                    <label>
+                        Resumen del menú u oferta
+                        <textarea id="menuSummary" rows="3" placeholder="Ej: Desayunos desde $2, combos de café + sanduche, postres por porción y bebidas frías"></textarea>
+                    </label>
+
+                    <div class="dynamic-block">
+                        <div class="dynamic-header">
+                            <h3>Productos / servicios detallados</h3>
+                            <button type="button" class="business-secondary-btn small" id="addMenuItemBtn">Agregar producto</button>
+                        </div>
+
+                        <div id="menuItemsContainer" class="dynamic-list"></div>
+                    </div>
+                </section>
+
+                <section class="business-form-section business-full">
+                    <div class="business-section-heading">
+                        <span>04</span>
+                        <div>
+                            <h2>Horarios, entrega y pagos</h2>
+                            <p>Esto permite que la IA recomiende tu negocio solo cuando tenga sentido según disponibilidad y forma de compra.</p>
+                        </div>
+                    </div>
+
+                    <label>
+                        Resumen de horarios
+                        <textarea id="scheduleSummary" rows="3" placeholder="Ej: Atendemos de lunes a viernes de 08:00 a 18:00. Sábados solo bajo pedido."></textarea>
+                    </label>
+
+                    <div class="hours-table" id="hoursContainer"></div>
+
+                    <div class="business-grid-2">
+                        <label>
+                            Métodos de pago
+                            <textarea id="paymentMethods" rows="3" placeholder="Ej: efectivo, transferencia, QR, tarjeta"></textarea>
+                        </label>
+
+                        <label>
+                            Entrega / retiro
+                            <textarea id="deliveryOptions" rows="3" placeholder="Ej: retiro en campus, delivery cercano, punto de encuentro, bajo pedido"></textarea>
+                        </label>
+                    </div>
+
+                    <label>
+                        Zona de cobertura
+                        <input type="text" id="serviceArea" placeholder="Ej: UPS Sur, Quitumbe, La Magdalena, Quito sur">
+                    </label>
+                </section>
+
+                <section class="business-form-section business-full">
+                    <div class="business-section-heading">
+                        <span>05</span>
+                        <div>
+                            <h2>Preguntas frecuentes e IA</h2>
+                            <p>Estas respuestas ayudan a que la IA hable de tu negocio con más seguridad y detalle.</p>
+                        </div>
+                    </div>
+
+                    <label>
+                        Resumen de preguntas frecuentes
+                        <textarea id="faqSummary" rows="3" placeholder="Ej: Se recomienda pedir con 30 minutos de anticipación. Aceptamos pedidos por WhatsApp."></textarea>
+                    </label>
+
+                    <div class="dynamic-block">
+                        <div class="dynamic-header">
+                            <h3>Preguntas frecuentes</h3>
+                            <button type="button" class="business-secondary-btn small" id="addFaqBtn">Agregar pregunta</button>
+                        </div>
+
+                        <div id="faqsContainer" class="dynamic-list"></div>
+                    </div>
+
+                    <label>
+                        Información extra para la IA
+                        <textarea id="aiExtraContext" rows="4" placeholder="Ej: Recomendar cuando alguien busque comida rápida, económica y cerca del campus. Ideal para estudiantes con poco tiempo."></textarea>
+                    </label>
+                </section>
 
                 <p class="form-message business-full" id="businessMessage"></p>
 
-                <div class="business-actions business-full">
-                    <button type="submit" class="auth-submit">
-                        Enviar registro
+                <div class="business-actions business-full sticky-business-actions">
+                    <button type="submit" class="auth-submit" id="submitBusinessBtn">
+                        Enviar ficha a revisión
                     </button>
+
+                    <a href="dashboard.html" class="business-secondary-btn business-link-btn">
+                        Ir al dashboard
+                    </a>
 
                     <button type="button" class="business-secondary-btn" id="logoutBtnForm">
                         Cerrar sesión
