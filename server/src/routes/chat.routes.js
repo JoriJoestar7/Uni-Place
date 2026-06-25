@@ -1,6 +1,7 @@
 import express from "express";
 import { pool } from "../db.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
+import { generateGeminiReply } from "../services/gemini.service.js";
 
 const router = express.Router();
 
@@ -38,8 +39,17 @@ router.post("/", async (req, res) => {
 
         const matches = await searchRelevantBusinesses(message);
         const wantsBusinessRecommendation = detectsBusinessIntent(message) || matches.length > 0;
-        const reply = buildAssistantReply(message, matches, wantsBusinessRecommendation, req.user);
+       let reply;
 
+try {
+    reply = await generateGeminiReply({
+        userMessage: message,
+        businessContext: matches
+    });
+} catch (error) {
+    console.error("GEMINI_REPLY_ERROR:", error);
+    reply = buildAssistantReply(message, matches, wantsBusinessRecommendation, req.user);
+} 
         await registerKnowledgeUsage(matches, req.user.id, message);
 
         return res.json({
@@ -173,17 +183,19 @@ function scoreBusiness(business, tokens, normalizedQuestion) {
         score += 35;
     }
 
-    for (const token of tokens) {
-        if (fields.name.includes(token)) score += 20;
-        if (fields.category.includes(token)) score += 16;
-        if (fields.keywords.includes(token)) score += 18;
-        if (fields.menu.includes(token)) score += 14;
-        if (fields.location.includes(token)) score += 10;
-        if (fields.payment.includes(token)) score += 7;
-        if (fields.delivery.includes(token)) score += 7;
-        if (fields.description.includes(token)) score += 6;
-        if (fields.knowledge.includes(token)) score += 4;
-    }
+for (const token of tokens) {
+    const variants = getTokenVariants(token);
+
+    if (fieldHasAnyVariant(fields.name, variants)) score += 20;
+    if (fieldHasAnyVariant(fields.category, variants)) score += 16;
+    if (fieldHasAnyVariant(fields.keywords, variants)) score += 18;
+    if (fieldHasAnyVariant(fields.menu, variants)) score += 14;
+    if (fieldHasAnyVariant(fields.location, variants)) score += 10;
+    if (fieldHasAnyVariant(fields.payment, variants)) score += 7;
+    if (fieldHasAnyVariant(fields.delivery, variants)) score += 7;
+    if (fieldHasAnyVariant(fields.description, variants)) score += 6;
+    if (fieldHasAnyVariant(fields.knowledge, variants)) score += 4;
+}
 
     if (detectsBusinessIntent(normalizedQuestion) && score > 0) {
         score += 5;
@@ -198,7 +210,13 @@ function scoreBusiness(business, tokens, normalizedQuestion) {
 
 function getMatchedTokens(business, tokens) {
     const allText = Object.values(getNormalizedBusinessFields(business)).join(" ");
-    return tokens.filter((token) => allText.includes(token)).slice(0, 8);
+
+    return tokens
+        .filter((token) => {
+            const variants = getTokenVariants(token);
+            return fieldHasAnyVariant(allText, variants);
+        })
+        .slice(0, 8);
 }
 
 function getNormalizedBusinessFields(business) {
@@ -417,5 +435,168 @@ function createShortText(value, maxLength = 160) {
 
     return `${text.slice(0, maxLength).trim()}...`;
 }
+function getTokenVariants(token) {
+    const normalizedToken = normalizeForSearch(token);
 
+    const variants = new Set();
+
+    if (!normalizedToken) {
+        return [];
+    }
+
+    variants.add(normalizedToken);
+
+    const singular = singularizeSpanishToken(normalizedToken);
+
+    if (singular) {
+        variants.add(singular);
+    }
+
+    const synonyms = SEARCH_SYNONYMS[normalizedToken] || SEARCH_SYNONYMS[singular] || [];
+
+    synonyms.forEach((word) => {
+        const normalizedSynonym = normalizeForSearch(word);
+
+        if (normalizedSynonym) {
+            variants.add(normalizedSynonym);
+            variants.add(singularizeSpanishToken(normalizedSynonym));
+        }
+    });
+
+    return Array.from(variants).filter(Boolean);
+}
+
+function singularizeSpanishToken(token) {
+    if (!token || token.length <= 3) {
+        return token;
+    }
+
+    if (token.endsWith("ces")) {
+        return `${token.slice(0, -3)}z`;
+    }
+
+    if (token.endsWith("iones")) {
+        return `${token.slice(0, -5)}ion`;
+    }
+
+    if (token.endsWith("ades")) {
+        return `${token.slice(0, -4)}ad`;
+    }
+
+    if (token.endsWith("es")) {
+        return token.slice(0, -2);
+    }
+
+    if (token.endsWith("s")) {
+        return token.slice(0, -1);
+    }
+
+    return token;
+}
+
+function fieldHasAnyVariant(fieldText, variants) {
+    if (!fieldText || !variants || variants.length === 0) {
+        return false;
+    }
+
+    const normalizedField = normalizeForSearch(fieldText);
+
+    const fieldTokens = normalizedField
+        .split(/\s+/)
+        .filter(Boolean);
+
+    const searchableTokens = new Set();
+
+    fieldTokens.forEach((token) => {
+        searchableTokens.add(token);
+
+        const singular = singularizeSpanishToken(token);
+
+        if (singular) {
+            searchableTokens.add(singular);
+        }
+    });
+
+    return variants.some((variant) => {
+        const normalizedVariant = normalizeForSearch(variant);
+
+        if (!normalizedVariant || normalizedVariant.length < 3) {
+            return false;
+        }
+
+        // Si es una frase, permite buscarla dentro del texto completo.
+        // Ejemplo: "comida rapida", "centro comercial"
+        if (normalizedVariant.includes(" ")) {
+            return normalizedField.includes(normalizedVariant);
+        }
+
+        // Si es una palabra, exige coincidencia exacta.
+        // Así "bar" ya no coincide con "barberia".
+        return searchableTokens.has(normalizedVariant);
+    });
+}
+
+const SEARCH_SYNONYMS = {
+    discoteca: [
+        "discotecas",
+        "disco",
+        "discos",
+        "club",
+        "clubs",
+        "club nocturno",
+        "bar nocturno",
+        "bares nocturnos",
+        "fiesta",
+        "farra",
+        "rumba",
+        "entretenimiento nocturno"
+    ],
+
+    discotecas: [
+        "discoteca",
+        "disco",
+        "discos",
+        "club",
+        "clubs",
+        "club nocturno",
+        "bar nocturno",
+        "bares nocturnos",
+        "fiesta",
+        "farra",
+        "rumba",
+        "entretenimiento nocturno"
+    ],
+
+    bar: [
+        "bares",
+        "bar nocturno",
+        "discoteca",
+        "club nocturno",
+        "fiesta",
+        "farra",
+        "rumba"
+    ],
+
+    bares: [
+        "bar",
+        "bar nocturno",
+        "discoteca",
+        "club nocturno",
+        "fiesta",
+        "farra",
+        "rumba"
+    ],
+
+    cafe: ["cafeteria", "cafeterias", "coffee", "bebida", "bebidas", "snack", "snacks"],
+    cafeteria: ["cafe", "cafes", "coffee", "desayuno", "snack", "snacks"],
+
+    comida: ["almuerzo", "almuerzos", "desayuno", "desayunos", "cena", "snack", "snacks", "restaurante", "restaurantes"],
+    restaurante: ["restaurantes", "comida", "almuerzo", "cena", "menu", "menú"],
+
+    papeleria: ["papelería", "copias", "impresiones", "impresion", "impresión", "utiles", "útiles"],
+    impresion: ["impresion", "impresión", "impresiones", "copias", "papeleria", "papelería"],
+
+    ropa: ["camiseta", "camisetas", "moda", "outfit", "prendas"],
+    delivery: ["entrega", "envio", "envío", "domicilio", "pedido", "pedidos"]
+};
 export default router;
