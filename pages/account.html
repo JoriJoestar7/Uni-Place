@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi cuenta | UniPlace</title>
+
+    <link rel="icon" href="../assets/icon.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/account.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap">
+</head>
+<body class="account-body">
+
+    <div class="cursor-glow"></div>
+    <div class="page-noise"></div>
+    <div class="background-halo halo-one"></div>
+    <div class="background-halo halo-two"></div>
+
+    <header class="account-header">
+        <a href="dashboard.html" class="account-brand">
+            <img src="../assets/icon.png" alt="UniPlace">
+            <span>UniPlace</span>
+        </a>
+
+        <a href="dashboard.html" class="account-back-btn">
+            Volver al chat
+        </a>
+    </header>
+
+    <main class="account-wrapper">
+        <section class="account-card">
+            <div class="account-heading">
+                <p>Perfil personal</p>
+                <h1>Mi cuenta</h1>
+                <span>
+                    Actualiza tu información personal y tu foto de perfil dentro de UniPlace.
+                </span>
+            </div>
+
+            <div class="account-layout">
+                <aside class="avatar-panel">
+                    <div class="avatar-preview" id="avatarPreview">
+                        <span id="avatarInitials">UP</span>
+                        <img id="avatarImage" src="" alt="Foto de perfil">
+                    </div>
+
+                    <form id="avatarForm" class="avatar-form">
+                        <label class="avatar-upload-btn">
+                            Cambiar foto
+                            <input type="file" id="avatarInput" accept="image/png, image/jpeg, image/webp">
+                        </label>
+
+                        <button type="submit" class="account-secondary-btn">
+                            Subir imagen
+                        </button>
+                    </form>
+
+                    <p class="avatar-help">
+                        Formatos permitidos: JPG, PNG o WEBP. Tamaño máximo: 2MB.
+                    </p>
+                </aside>
+
+                <form class="account-form" id="accountForm">
+                    <label>
+                        Nombre
+                        <input type="text" id="name" placeholder="Tu nombre">
+                    </label>
+
+                    <label>
+                        Nombre visible
+                        <input type="text" id="displayName" placeholder="Cómo quieres aparecer">
+                    </label>
+
+                    <label>
+                        Correo
+                        <input type="email" id="email" disabled>
+                    </label>
+
+                    <label>
+                        Rol
+                        <input type="text" id="role" disabled>
+                    </label>
+
+                    <label>
+                        Teléfono
+                        <input type="text" id="phone" placeholder="Ej: 0987654321">
+                    </label>
+
+                    <label class="account-full">
+                        Bio
+                        <textarea id="bio" rows="5" placeholder="Cuéntanos algo breve sobre ti"></textarea>
+                    </label>
+
+                    <p class="account-message account-full" id="accountMessage"></p>
+
+                    <div class="account-actions account-full">
+                        <button type="submit" class="account-submit-btn">
+                            Guardar cambios
+                        </button>
+
+                        <button type="button" class="account-secondary-btn" id="logoutBtn">
+                            Cerrar sesión
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script src="../js/account.js"></script>
+</body>
+</html>

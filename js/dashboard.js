@@ -40,6 +40,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     startDashboard();
 
+    const accountBtn = document.getElementById("accountBtn");
+
+if (accountBtn) {
+    accountBtn.addEventListener("click", () => {
+        window.location.href = "account.html";
+    });
+}
     async function startDashboard() {
         const canEnter = await validateDashboardAccess();
 
