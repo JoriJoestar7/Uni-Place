@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import businessRoutes from "./routes/business.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
 
 dotenv.config();
 
@@ -20,6 +21,8 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+app.use("/uploads", express.static("public/uploads"));
 
 app.use(express.json());
 
@@ -49,6 +52,8 @@ app.get("/api/health", async (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/uploads", express.static("public/uploads"));
 app.use("/api/business", businessRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/chat", chatRoutes);
