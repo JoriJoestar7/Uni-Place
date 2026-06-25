@@ -132,7 +132,8 @@
     margin-bottom: 18px;
 }
 
-.sidebar-menu button {
+.sidebar-menu button,
+.sidebar-menu a {
     text-align: left;
     border: 1px solid transparent;
     border-radius: 14px;
@@ -143,7 +144,8 @@
     transition: var(--transition-soft);
 }
 
-.sidebar-menu button:hover {
+.sidebar-menu button:hover,
+.sidebar-menu a:hover {
     color: var(--text);
     background: rgba(255, 255, 255, 0.055);
     border-color: rgba(255, 255, 255, 0.08);

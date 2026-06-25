@@ -232,7 +232,7 @@ document.addEventListener("DOMContentLoaded", () => {
         templateButtons.forEach((button) => {
             button.addEventListener("click", () => {
                 const template = button.dataset.template;
-                openTemplateMessage(template);
+                
             });
         });
 

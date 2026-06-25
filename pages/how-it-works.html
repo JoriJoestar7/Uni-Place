@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cómo funciona | UniPlace</title>
+
+    <link rel="icon" href="../assets/icon.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/info.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap">
+</head>
+<body class="info-body" data-protected="true">
+
+    <div class="cursor-glow"></div>
+    <div class="page-noise"></div>
+    <div class="background-halo halo-one"></div>
+    <div class="background-halo halo-two"></div>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="brand">
+            <img src="../assets/icon.png" alt="Logo UniPlace">
+            <span>UniPlace</span>
+        </a>
+        <nav class="nav-links">
+            <a href="about.html" class="info-nav-link active">¿Qué es UniPlace?</a>
+            <a href="how-it-works.html" class="info-nav-link active">¿Cómo funciona?</a>
+            <a href="who-we-are.html" class="info-nav-link active">¿Quiénes somos?</a>
+              <a href="dashboard.html" class="info-chat-btn">
+        Volver al chat
+    </a>
+        </nav>
+    </header>
+
+    <main class="info-wrapper">
+        <section class="info-hero fade-up compact">
+            <div>
+                <p class="info-kicker">Del registro a la recomendación</p>
+                <h1>Cómo funciona</h1>
+                <p>
+                    UniPlace organiza el flujo completo de uso: acceso de usuarios, registro de emprendimientos, revisión administrativa,
+                    base de conocimiento y recomendaciones inteligentes dentro del chat.
+                </p>
+
+                <div class="info-actions">
+                    <a href="who-we-are.html" class="info-btn">Ver quiénes somos</a>
+                    <a href="dashboard.html" class="info-btn secondary">Volver al chat</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <div class="section-heading">
+                <h2>Flujo principal</h2>
+                <p>
+                    El sistema conecta la información del emprendimiento con la consulta del estudiante de forma controlada y segura.
+                </p>
+            </div>
+
+            <div class="timeline">
+                <article class="timeline-item">
+                    <div class="timeline-index">01</div>
+                    <div>
+                        <h3>El usuario accede a UniPlace</h3>
+                        <p>
+                            La plataforma cuenta con registro e inicio de sesión para estudiantes, emprendedores y administradores.
+                            Cada rol tiene permisos diferentes dentro del sistema.
+                        </p>
+                    </div>
+                </article>
+
+                <article class="timeline-item">
+                    <div class="timeline-index">02</div>
+                    <div>
+                        <h3>El emprendimiento registra su información</h3>
+                        <p>
+                            El emprendedor completa una ficha con datos del negocio, menú, precios, horarios, ubicación, métodos de pago,
+                            preguntas frecuentes y palabras clave útiles para la IA.
+                        </p>
+                    </div>
+                </article>
+
+                <article class="timeline-item">
+                    <div class="timeline-index">03</div>
+                    <div>
+                        <h3>El admin revisa y aprueba</h3>
+                        <p>
+                            Antes de aparecer en las recomendaciones, el negocio pasa por una revisión administrativa. Si es rechazado,
+                            el emprendedor puede ver la razón, corregir la información y volver a intentarlo.
+                        </p>
+                    </div>
+                </article>
+
+                <article class="timeline-item">
+                    <div class="timeline-index">04</div>
+                    <div>
+                        <h3>La base de conocimiento se activa</h3>
+                        <p>
+                            Cuando el negocio es aprobado, su información pasa a una base de conocimiento interna que el chat puede consultar.
+                            Esto permite priorizar emprendimientos registrados y aprobados dentro de UniPlace.
+                        </p>
+                    </div>
+                </article>
+
+                <article class="timeline-item">
+                    <div class="timeline-index">05</div>
+                    <div>
+                        <h3>La IA recomienda con contexto</h3>
+                        <p>
+                            Cuando un estudiante pregunta por comida, papelería, transporte u otro servicio, el sistema busca negocios relevantes
+                            según categoría, presupuesto, ubicación, horarios y palabras clave.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <div class="section-heading">
+                <h2>Módulos del sistema</h2>
+                <p>
+                    UniPlace está organizado en módulos funcionales que permiten mantener el proyecto ordenado y escalable.
+                </p>
+            </div>
+
+            <div class="info-grid">
+                <article class="info-card">
+                    <h3>Página principal</h3>
+                    <p>Presenta el proyecto, su enfoque, acceso al registro y páginas informativas.</p>
+                </article>
+
+                <article class="info-card">
+                    <h3>Autenticación</h3>
+                    <p>Gestiona registro, inicio de sesión, roles y protección de rutas mediante token.</p>
+                </article>
+
+                <article class="info-card">
+                    <h3>Chat inteligente</h3>
+                    <p>Procesa preguntas naturales y recomienda negocios según los datos aprobados.</p>
+                </article>
+
+                <article class="info-card">
+                    <h3>Registro de negocios</h3>
+                    <p>Permite ingresar información completa para alimentar la base de conocimiento.</p>
+                </article>
+
+                <article class="info-card">
+                    <h3>Panel admin</h3>
+                    <p>Sirve para aprobar, rechazar, ocultar o revisar emprendimientos registrados.</p>
+                </article>
+
+                <article class="info-card">
+                    <h3>Base de datos</h3>
+                    <p>Almacena usuarios, negocios, horarios, menú, FAQs, conocimiento IA y registros de recomendación.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <div class="section-heading">
+                <h2>La recomendación inteligente</h2>
+                <p>
+                    El chat no recomienda al azar: cruza la pregunta del usuario con datos estructurados de negocios aprobados.
+                </p>
+            </div>
+
+            <div class="info-grid">
+                <article class="info-card">
+                    <span class="number">A</span>
+                    <h3>Ubicación y proximidad</h3>
+                    <p>Prioriza opciones cercanas a la zona universitaria, campus o punto de referencia indicado.</p>
+                </article>
+
+                <article class="info-card">
+                    <span class="number">B</span>
+                    <h3>Horario y disponibilidad</h3>
+                    <p>Considera días y horas de atención para sugerir negocios útiles en el momento de la consulta.</p>
+                </article>
+
+                <article class="info-card">
+                    <span class="number">C</span>
+                    <h3>Presupuesto y categoría</h3>
+                    <p>Filtra por precios, productos, servicios, palabras clave y necesidades concretas del estudiante.</p>
+                </article>
+            </div>
+        </section>
+
+        <nav class="info-footer-nav">
+            <a href="about.html" class="info-btn secondary">Anterior: Qué es UniPlace</a>
+            <a href="who-we-are.html" class="info-btn">Siguiente: Quiénes somos</a>
+        </nav>
+    </main>
+
+    <script src="../js/info.js"></script>
+</body>
+</html>
