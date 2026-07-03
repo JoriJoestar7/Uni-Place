@@ -183,6 +183,19 @@
     font-weight: 800;
 }
 
+.forgot-password-link {
+    width: fit-content;
+    color: var(--soft);
+    font-size: 0.72rem;
+    text-decoration: none;
+    transition: var(--transition-soft);
+}
+
+.forgot-password-link:hover {
+    color: var(--text);
+    text-shadow: 0 0 18px rgba(255, 255, 255, 0.18);
+}
+
 @media (max-width: 520px) {
     .auth-card {
         padding: 28px;
@@ -191,4 +204,24 @@
     .auth-heading h1 {
         font-size: 2.9rem;
     }
+}
+/* Espaciado extra para recuperación de contraseña */
+
+.recover-back-btn {
+    margin-top: 16px;
+}
+
+#forgotForm .auth-submit,
+#resetForm .auth-submit {
+    margin-top: 10px;
+}
+
+#forgotForm + #resetForm,
+#resetForm + .recover-back-btn,
+#forgotForm + .recover-back-btn {
+    margin-top: 18px;
+}
+
+.auth-card > .auth-secondary-action {
+    margin-top: 16px;
 }
