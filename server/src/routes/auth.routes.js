@@ -3,6 +3,13 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { pool } from "../db.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
+import { sendVerificationEmail } from "../services/mail.service.js";
+import {
+    generateVerificationCode,
+    hashVerificationCode,
+    compareVerificationCode,
+    getVerificationExpirationDate
+} from "../services/verification.service.js";
 
 const router = express.Router();
 
@@ -30,7 +37,7 @@ router.post("/register", async (req, res) => {
         const normalizedEmail = email.trim().toLowerCase();
 
         const [existingUser] = await pool.execute(
-            "SELECT id FROM users WHERE email = ? LIMIT 1",
+            "SELECT id, email_verified FROM users WHERE email = ? LIMIT 1",
             [normalizedEmail]
         );
 
@@ -44,39 +51,281 @@ router.post("/register", async (req, res) => {
         const saltRounds = Number(process.env.BCRYPT_SALT_ROUNDS) || 12;
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
+        const verificationCode = generateVerificationCode();
+        const verificationCodeHash = await hashVerificationCode(verificationCode);
+        const expirationDate = getVerificationExpirationDate();
+
         const [result] = await pool.execute(
-            "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)",
-            [name.trim(), normalizedEmail, passwordHash, finalRole]
+            `INSERT INTO users (
+                name,
+                email,
+                password_hash,
+                role,
+                email_verified,
+                verification_code_hash,
+                verification_code_expires_at,
+                last_verification_sent_at
+            ) VALUES (?, ?, ?, ?, 0, ?, ?, NOW())`,
+            [
+                name.trim(),
+                normalizedEmail,
+                passwordHash,
+                finalRole,
+                verificationCodeHash,
+                expirationDate
+            ]
         );
 
-        const token = createToken({
-            id: result.insertId,
-            name: name.trim(),
-            email: normalizedEmail,
-            role: finalRole
-        });
+try {
+    await sendVerificationEmail({
+        to: normalizedEmail,
+        name: name.trim(),
+        code: verificationCode
+    });
+} catch (mailError) {
+    console.error("MAIL_SEND_ERROR:", mailError);
 
-        return res.status(201).json({
-            ok: true,
-            message: "Cuenta creada correctamente.",
-            token,
-            user: {
-                id: result.insertId,
-                name: name.trim(),
-                email: normalizedEmail,
-                role: finalRole
-            }
-        });
+    await pool.execute(
+        "DELETE FROM users WHERE id = ?",
+        [result.insertId]
+    );
+
+    return res.status(500).json({
+        ok: false,
+        message: "No se pudo enviar el correo de verificación. Revisa la configuración del correo e intenta nuevamente."
+    });
+}
+
+return res.status(201).json({
+    ok: true,
+    message: "Cuenta creada. Revisa tu correo para verificarla.",
+    needsVerification: true,
+    email: normalizedEmail,
+    user: {
+        id: result.insertId,
+        name: name.trim(),
+        email: normalizedEmail,
+        role: finalRole,
+        email_verified: 0
+    }
+});
 
     } catch (error) {
         console.error("REGISTER_ERROR:", error);
 
         return res.status(500).json({
             ok: false,
-            message: "Error interno al crear la cuenta."
+            message: "Error interno al crear la cuenta o enviar el correo."
         });
     }
-}); 
+});
+
+router.post("/verify-email", async (req, res) => {
+    try {
+        const { email, code } = req.body;
+
+        if (!email || !code) {
+            return res.status(400).json({
+                ok: false,
+                message: "Ingresa tu correo y el código de verificación."
+            });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const [users] = await pool.execute(
+            `SELECT 
+                id,
+                name,
+                email,
+                role,
+                email_verified,
+                verification_code_hash,
+                verification_code_expires_at
+            FROM users
+            WHERE email = ?
+            LIMIT 1`,
+            [normalizedEmail]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                message: "No encontramos una cuenta con ese correo."
+            });
+        }
+
+        const user = users[0];
+
+        if (user.email_verified === 1) {
+            const token = createToken(user);
+
+            return res.json({
+                ok: true,
+                message: "Tu cuenta ya estaba verificada.",
+                token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    email_verified: 1
+                }
+            });
+        }
+
+        if (!user.verification_code_hash || !user.verification_code_expires_at) {
+            return res.status(400).json({
+                ok: false,
+                message: "No existe un código activo. Solicita uno nuevo."
+            });
+        }
+
+        const now = new Date();
+        const expiresAt = new Date(user.verification_code_expires_at);
+
+        if (now > expiresAt) {
+            return res.status(400).json({
+                ok: false,
+                message: "El código venció. Solicita uno nuevo."
+            });
+        }
+
+        const isValidCode = await compareVerificationCode(
+            code.trim(),
+            user.verification_code_hash
+        );
+
+        if (!isValidCode) {
+            return res.status(400).json({
+                ok: false,
+                message: "El código ingresado no es correcto."
+            });
+        }
+
+        await pool.execute(
+            `UPDATE users
+             SET email_verified = 1,
+                 verified_at = NOW(),
+                 verification_code_hash = NULL,
+                 verification_code_expires_at = NULL
+             WHERE id = ?`,
+            [user.id]
+        );
+
+        const token = createToken(user);
+
+        return res.json({
+            ok: true,
+            message: "Correo verificado correctamente.",
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                email_verified: 1
+            }
+        });
+
+    } catch (error) {
+        console.error("VERIFY_EMAIL_ERROR:", error);
+
+        return res.status(500).json({
+            ok: false,
+            message: "Error interno al verificar el correo."
+        });
+    }
+});
+
+router.post("/resend-verification", async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                ok: false,
+                message: "Ingresa tu correo."
+            });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const [users] = await pool.execute(
+            `SELECT 
+                id,
+                name,
+                email,
+                email_verified,
+                last_verification_sent_at
+            FROM users
+            WHERE email = ?
+            LIMIT 1`,
+            [normalizedEmail]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                message: "No encontramos una cuenta con ese correo."
+            });
+        }
+
+        const user = users[0];
+
+        if (user.email_verified === 1) {
+            return res.status(400).json({
+                ok: false,
+                message: "Esta cuenta ya está verificada."
+            });
+        }
+
+        if (user.last_verification_sent_at) {
+            const lastSent = new Date(user.last_verification_sent_at);
+            const now = new Date();
+            const secondsSinceLastSend = Math.floor((now - lastSent) / 1000);
+
+            if (secondsSinceLastSend < 60) {
+                return res.status(429).json({
+                    ok: false,
+                    message: `Espera ${60 - secondsSinceLastSend} segundos antes de pedir otro código.`
+                });
+            }
+        }
+
+        const verificationCode = generateVerificationCode();
+        const verificationCodeHash = await hashVerificationCode(verificationCode);
+        const expirationDate = getVerificationExpirationDate();
+
+        await pool.execute(
+            `UPDATE users
+             SET verification_code_hash = ?,
+                 verification_code_expires_at = ?,
+                 last_verification_sent_at = NOW()
+             WHERE id = ?`,
+            [verificationCodeHash, expirationDate, user.id]
+        );
+
+        await sendVerificationEmail({
+            to: user.email,
+            name: user.name,
+            code: verificationCode
+        });
+
+        return res.json({
+            ok: true,
+            message: "Te enviamos un nuevo código de verificación."
+        });
+
+    } catch (error) {
+        console.error("RESEND_VERIFICATION_ERROR:", error);
+
+        return res.status(500).json({
+            ok: false,
+            message: "Error interno al reenviar el código."
+        });
+    }
+});
 
 router.post("/login", async (req, res) => {
     try {
@@ -92,7 +341,16 @@ router.post("/login", async (req, res) => {
         const normalizedEmail = email.trim().toLowerCase();
 
         const [users] = await pool.execute(
-            "SELECT id, name, email, password_hash, role FROM users WHERE email = ? LIMIT 1",
+            `SELECT 
+                id,
+                name,
+                email,
+                password_hash,
+                role,
+                email_verified
+             FROM users
+             WHERE email = ?
+             LIMIT 1`,
             [normalizedEmail]
         );
 
@@ -103,12 +361,9 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        const userFromDb = users[0];
+        const user = users[0];
 
-        const passwordIsValid = await bcrypt.compare(
-            password,
-            userFromDb.password_hash
-        );
+        const passwordIsValid = await bcrypt.compare(password, user.password_hash);
 
         if (!passwordIsValid) {
             return res.status(401).json({
@@ -117,20 +372,33 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        const user = {
-            id: userFromDb.id,
-            name: userFromDb.name,
-            email: userFromDb.email,
-            role: userFromDb.role
-        };
+        if (user.email_verified !== 1) {
+            return res.status(403).json({
+                ok: false,
+                requiresVerification: true,
+                email: user.email,
+                message: "Debes verificar tu correo antes de iniciar sesión."
+            });
+        }
 
-        const token = createToken(user);
+        const token = createToken({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        });
 
         return res.json({
             ok: true,
             message: "Inicio de sesión correcto.",
             token,
-            user
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                email_verified: user.email_verified
+            }
         });
 
     } catch (error) {

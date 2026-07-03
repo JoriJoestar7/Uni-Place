@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar correo | UniPlace</title>
+
+    <link rel="icon" href="../assets/icon.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/auth.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap">
+</head>
+<body class="auth-body">
+
+    <div class="cursor-glow"></div>
+    <div class="page-noise"></div>
+    <div class="background-halo halo-one"></div>
+    <div class="background-halo halo-two"></div>
+
+    <main class="auth-wrapper">
+        <section class="auth-card fade-up">
+            <a href="../index.html" class="auth-brand">
+                <img src="../assets/icon.png" alt="Logo UniPlace">
+                <span>UniPlace</span>
+            </a>
+
+            <div class="auth-heading">
+                <p>Verificación de cuenta</p>
+                <h1>Revisa tu correo</h1>
+            </div>
+
+            <p class="verify-text">
+                Enviamos un código de 6 dígitos a tu correo. Escríbelo para activar tu cuenta en UniPlace.
+            </p>
+
+            <form class="auth-form" id="verifyForm">
+                <label>
+                    Correo
+                    <input type="email" id="verifyEmail" placeholder="nombre@correo.com">
+                </label>
+
+                <label>
+                    Código de verificación
+                    <input type="text" id="verifyCode" maxlength="6" placeholder="000000">
+                </label>
+
+                <p class="form-message" id="verifyMessage"></p>
+
+                <button type="submit" class="auth-submit">
+                    Verificar cuenta
+                </button>
+
+                <button type="button" class="auth-secondary-action" id="resendCodeBtn">
+                    Reenviar código
+                </button>
+
+                <button type="button" class="auth-secondary-action" id="backToLoginBtn">
+                    Volver al inicio de sesión
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script src="../js/verify-email.js"></script>
+</body>
+</html>

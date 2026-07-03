@@ -16,6 +16,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.2.0",
-    "mysql2": "^3.11.5"
+    "mysql2": "^3.11.5",
+    "nodemailer": "^9.0.3"
   }
 }

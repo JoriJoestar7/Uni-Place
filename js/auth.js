@@ -39,49 +39,68 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     loginForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
+    event.preventDefault();
 
-        const email = document.getElementById("loginEmail").value.trim();
-        const password = document.getElementById("loginPassword").value.trim();
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
 
-        if (!email || !password) {
-            showMessage(loginMessage, "Completa todos los campos para continuar.");
-            return;
-        }
+    if (!email || !password) {
+        showMessage(loginMessage, "Completa todos los campos para continuar.");
+        return;
+    }
 
-        try {
-            setLoading(loginForm, true);
+    try {
+        setLoading(loginForm, true);
 
-            const response = await fetch(`${API_URL}/auth/login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ email, password })
-            });
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+        });
 
-            const data = await response.json();
+        const data = await response.json();
 
-            if (!response.ok || !data.ok) {
-                showMessage(loginMessage, data.message || "No se pudo iniciar sesión.");
+        console.log("LOGIN RESPONSE:", data);
+
+        if (!response.ok || !data.ok) {
+            if (data.requiresVerification === true) {
+                localStorage.removeItem("uniplace_token");
+                localStorage.removeItem("uniplace_user");
+                localStorage.setItem("uniplace_pending_email", data.email || email);
+
+                showMessage(loginMessage, "Debes verificar tu correo. Redirigiendo...");
+
+                setTimeout(() => {
+                    window.location.href = "verify-email.html";
+                }, 700);
+
                 return;
             }
 
-            saveSession(data);
-
-            showMessage(loginMessage, "Acceso correcto. Redirigiendo...", true);
-
-            setTimeout(() => {
-                redirectByRole(data.user);
-            }, 650);
-
-        } catch (error) {
-            console.error("LOGIN_FRONT_ERROR:", error);
-            showMessage(loginMessage, "No se pudo conectar con el servidor.");
-        } finally {
-            setLoading(loginForm, false);
+            showMessage(loginMessage, data.message || "No se pudo iniciar sesión.");
+            return;
         }
-    });
+
+        localStorage.removeItem("uniplace_pending_email");
+
+        localStorage.setItem("uniplace_token", data.token);
+        localStorage.setItem("uniplace_user", JSON.stringify(data.user));
+
+        showMessage(loginMessage, "Acceso correcto. Redirigiendo...", true);
+
+        setTimeout(() => {
+            redirectByRole(data.user);
+        }, 650);
+
+    } catch (error) {
+        console.error("LOGIN_FRONT_ERROR:", error);
+        showMessage(loginMessage, "No se pudo conectar con el servidor.");
+    } finally {
+        setLoading(loginForm, false);
+    }
+});
 
     registerForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -125,13 +144,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            saveSession(data);
+localStorage.removeItem("uniplace_token");
+localStorage.removeItem("uniplace_user");
+localStorage.setItem("uniplace_pending_email", data.email || email);
 
-            showMessage(registerMessage, "Cuenta creada correctamente. Redirigiendo...", true);
+showMessage(registerMessage, "Cuenta creada. Revisa tu correo para verificarla...", true);
 
-            setTimeout(() => {
-                redirectByRole(data.user);
-            }, 650);
+setTimeout(() => {
+    window.location.href = "verify-email.html";
+}, 650);    
 
         } catch (error) {
             console.error("REGISTER_FRONT_ERROR:", error);
