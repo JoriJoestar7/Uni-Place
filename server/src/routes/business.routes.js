@@ -1,6 +1,7 @@
 import express from "express";
 import { pool } from "../db.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
+import { uploadBusinessImages, getPublicUploadUrl } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -278,6 +279,172 @@ router.post("/register", verifyToken, async (req, res) => {
     }
 });
 
+
+router.patch(
+    "/me/images",
+    verifyToken,
+    uploadBusinessImages.fields([
+        { name: "businessLogo", maxCount: 1 },
+        { name: "businessCover", maxCount: 1 },
+        { name: "businessPhotos", maxCount: 6 }
+    ]),
+    async (req, res) => {
+        const connection = await pool.getConnection();
+
+        try {
+            if (req.user.role !== "entrepreneur") {
+                return res.status(403).json({
+                    ok: false,
+                    message: "Solo las cuentas de emprendimiento pueden subir imágenes."
+                });
+            }
+
+            const [businesses] = await connection.execute(
+                "SELECT id, status FROM businesses WHERE owner_user_id = ? LIMIT 1",
+                [req.user.id]
+            );
+
+            if (businesses.length === 0) {
+                return res.status(404).json({
+                    ok: false,
+                    message: "Primero debes registrar la ficha de tu emprendimiento."
+                });
+            }
+
+            const businessId = businesses[0].id;
+            const logoFile = req.files?.businessLogo?.[0] || null;
+            const coverFile = req.files?.businessCover?.[0] || null;
+            const galleryFiles = req.files?.businessPhotos || [];
+
+            if (!logoFile && !coverFile && galleryFiles.length === 0) {
+                return res.status(400).json({
+                    ok: false,
+                    message: "Selecciona al menos una imagen para subir."
+                });
+            }
+
+            await connection.beginTransaction();
+
+            if (logoFile) {
+                await connection.execute(
+                    "UPDATE businesses SET logo_url = ? WHERE id = ?",
+                    [getPublicUploadUrl(logoFile), businessId]
+                );
+            }
+
+            if (coverFile) {
+                await connection.execute(
+                    "UPDATE businesses SET cover_image_url = ? WHERE id = ?",
+                    [getPublicUploadUrl(coverFile), businessId]
+                );
+            }
+
+            for (const file of galleryFiles) {
+                await connection.execute(
+                    `INSERT INTO business_photos (business_id, image_url)
+                     VALUES (?, ?)`,
+                    [businessId, getPublicUploadUrl(file)]
+                );
+            }
+
+            await connection.execute(
+                `UPDATE businesses
+                 SET status = 'pending',
+                     is_ai_visible = 0,
+                     rejection_reason = NULL,
+                     rejected_at = NULL,
+                     resubmitted_at = CURRENT_TIMESTAMP
+                 WHERE id = ?`,
+                [businessId]
+            );
+
+            await connection.execute(
+                `UPDATE business_ai_knowledge
+                 SET knowledge_status = 'inactive',
+                     priority_score = 0,
+                     last_generated_at = CURRENT_TIMESTAMP
+                 WHERE business_id = ?`,
+                [businessId]
+            );
+
+            await connection.commit();
+
+            const business = await getBusinessProfileById(businessId);
+
+            return res.json({
+                ok: true,
+                message: "Imágenes actualizadas. El emprendimiento volvió a quedar pendiente de revisión.",
+                business
+            });
+
+        } catch (error) {
+            await connection.rollback();
+
+            console.error("BUSINESS_IMAGES_ERROR:", error);
+
+            return res.status(500).json({
+                ok: false,
+                message: error.message || "Error al subir imágenes del emprendimiento."
+            });
+        } finally {
+            connection.release();
+        }
+    }
+);
+
+router.delete("/me/photos/:photoId", verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== "entrepreneur") {
+            return res.status(403).json({
+                ok: false,
+                message: "Solo las cuentas de emprendimiento pueden eliminar fotos."
+            });
+        }
+
+        const { photoId } = req.params;
+
+        const [businesses] = await pool.execute(
+            "SELECT id FROM businesses WHERE owner_user_id = ? LIMIT 1",
+            [req.user.id]
+        );
+
+        if (businesses.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                message: "No tienes un emprendimiento registrado."
+            });
+        }
+
+        const [result] = await pool.execute(
+            `DELETE FROM business_photos
+             WHERE id = ?
+             AND business_id = ?`,
+            [photoId, businesses[0].id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                ok: false,
+                message: "Foto no encontrada."
+            });
+        }
+
+        return res.json({
+            ok: true,
+            message: "Foto eliminada correctamente."
+        });
+
+    } catch (error) {
+        console.error("BUSINESS_DELETE_PHOTO_ERROR:", error);
+
+        return res.status(500).json({
+            ok: false,
+            message: "Error al eliminar la foto."
+        });
+    }
+});
+
+
 async function getBusinessProfileByOwner(ownerUserId) {
     const [businesses] = await pool.execute(
         "SELECT * FROM businesses WHERE owner_user_id = ? LIMIT 1",
@@ -333,11 +500,20 @@ async function enrichBusinessProfile(business) {
         [business.id]
     );
 
+    const [photos] = await pool.execute(
+        `SELECT id, image_url, caption, created_at
+         FROM business_photos
+         WHERE business_id = ?
+         ORDER BY created_at DESC, id DESC`,
+        [business.id]
+    );
+
     return {
         ...business,
         menu_items: menuItems,
         hours,
         faqs,
+        photos,
         ai_knowledge: knowledgeRows[0] || null
     };
 }

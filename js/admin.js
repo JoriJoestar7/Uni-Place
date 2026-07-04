@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const API_URL = "http://localhost:3000/api";
+    const SERVER_URL = "http://localhost:3000";
 
     const token = localStorage.getItem("uniplace_token");
     const userRaw = localStorage.getItem("uniplace_user");
@@ -162,6 +163,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
 
+                ${renderBusinessImagePreview(business)}
+
                 <p class="business-description">
                     ${escapeHtml(business.description || "Sin descripción")}
                 </p>
@@ -210,6 +213,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         <section>
                             <h3>Preguntas frecuentes</h3>
                             ${renderFaqs(business.faqs)}
+                        </section>
+
+                        <section>
+                            <h3>Fotos del emprendimiento</h3>
+                            ${renderBusinessGallery(business.photos)}
                         </section>
 
                         <section class="knowledge-preview">
@@ -291,6 +299,41 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("ADMIN_UPDATE_STATUS_FRONT_ERROR:", error);
             showMessage("No se pudo conectar con el servidor.");
         }
+    }
+
+
+    function renderBusinessImagePreview(business) {
+        const logoUrl = buildImageUrl(business.logo_url);
+        const coverUrl = buildImageUrl(business.cover_image_url);
+
+        if (!logoUrl && !coverUrl) return "";
+
+        return `
+            <div class="admin-business-images">
+                ${coverUrl ? `<img class="admin-business-cover" src="${escapeHtml(coverUrl)}" alt="Portada del emprendimiento">` : ""}
+                ${logoUrl ? `<img class="admin-business-logo" src="${escapeHtml(logoUrl)}" alt="Logo del emprendimiento">` : ""}
+            </div>
+        `;
+    }
+
+    function renderBusinessGallery(photos = []) {
+        if (!photos || photos.length === 0) {
+            return `<p class="admin-empty-small">No hay fotos de galería registradas.</p>`;
+        }
+
+        return `
+            <div class="admin-business-gallery">
+                ${photos.map((photo) => `
+                    <img src="${escapeHtml(buildImageUrl(photo.image_url))}" alt="Foto del emprendimiento">
+                `).join("")}
+            </div>
+        `;
+    }
+
+    function buildImageUrl(url) {
+        if (!url) return "";
+        if (url.startsWith("http")) return url;
+        return `${SERVER_URL}${url}`;
     }
 
     function renderMenuItems(items = []) {

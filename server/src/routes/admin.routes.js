@@ -286,11 +286,20 @@ async function enrichBusinesses(businesses) {
             [business.id]
         );
 
+        const [photos] = await pool.execute(
+            `SELECT id, image_url, caption, created_at
+             FROM business_photos
+             WHERE business_id = ?
+             ORDER BY created_at DESC, id DESC`,
+            [business.id]
+        );
+
         enriched.push({
             ...business,
             menu_items: menuItems,
             hours,
-            faqs
+            faqs,
+            photos
         });
     }
 

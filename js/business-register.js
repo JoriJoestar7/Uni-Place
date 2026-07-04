@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const API_URL = "http://localhost:3000/api";
+    const SERVER_URL = "http://localhost:3000";
 
     const token = localStorage.getItem("uniplace_token");
     const userRaw = localStorage.getItem("uniplace_user");
@@ -37,6 +38,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const businessRejectionText = document.getElementById("businessRejectionText");
     const logoutBtnForm = document.getElementById("logoutBtnForm");
     const submitBusinessBtn = document.getElementById("submitBusinessBtn");
+
+    const businessMediaStatus = document.getElementById("businessMediaStatus");
+    const businessLogoInput = document.getElementById("businessLogoInput");
+    const businessCoverInput = document.getElementById("businessCoverInput");
+    const businessPhotosInput = document.getElementById("businessPhotosInput");
+    const businessLogoPreview = document.getElementById("businessLogoPreview");
+    const businessCoverPreview = document.getElementById("businessCoverPreview");
+    const businessGalleryPreview = document.getElementById("businessGalleryPreview");
+    const uploadBusinessImagesBtn = document.getElementById("uploadBusinessImagesBtn");
+
+    let currentBusiness = null;
 
     const menuItemsContainer = document.getElementById("menuItemsContainer");
     const addMenuItemBtn = document.getElementById("addMenuItemBtn");
@@ -88,6 +100,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            currentBusiness = data.business || currentBusiness;
+            renderBusinessImages(currentBusiness);
+
+            if (hasSelectedBusinessFiles()) {
+                showMessage("Ficha guardada. Subiendo imágenes del emprendimiento...", true);
+
+                const imagesUploaded = await uploadBusinessImages(false);
+
+                if (!imagesUploaded) {
+                    return;
+                }
+            }
+
             showMessage(data.message || "Ficha enviada correctamente.", true);
 
             setTimeout(() => {
@@ -112,6 +137,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     logoutBtnForm.addEventListener("click", logout);
 
+    businessLogoInput?.addEventListener("change", () => {
+        renderSelectedImagePreview(businessLogoInput, businessLogoPreview, "Sin logo", true);
+    });
+
+    businessCoverInput?.addEventListener("change", () => {
+        renderSelectedImagePreview(businessCoverInput, businessCoverPreview, "Sin portada", false);
+    });
+
+    businessPhotosInput?.addEventListener("change", () => {
+        renderSelectedGalleryPreview();
+    });
+
+    uploadBusinessImagesBtn?.addEventListener("click", async () => {
+        await uploadBusinessImages(true);
+    });
+
     async function checkExistingBusiness() {
         try {
             const response = await fetch(`${API_URL}/business/me`, {
@@ -122,6 +163,9 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (response.status === 404) {
+                currentBusiness = null;
+                renderBusinessImages(null);
+
                 showStatusBox({
                     title: "Nueva ficha de emprendimiento",
                     text: "Aún no tienes un emprendimiento registrado. Completa la ficha para enviarla a revisión.",
@@ -137,7 +181,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            currentBusiness = data.business;
             fillBusinessForm(data.business);
+            renderBusinessImages(data.business);
             renderBusinessStatus(data.business);
 
         } catch (error) {
@@ -474,6 +520,230 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         faqsContainer.appendChild(row);
+    }
+
+
+    async function uploadBusinessImages(showSuccessMessage = true) {
+        if (!currentBusiness) {
+            showMessage("Primero guarda la ficha del emprendimiento antes de subir imágenes.");
+            return false;
+        }
+
+        if (!hasSelectedBusinessFiles()) {
+            showMessage("Selecciona al menos una imagen para subir.");
+            return false;
+        }
+
+        const formData = new FormData();
+
+        if (businessLogoInput?.files?.[0]) {
+            formData.append("businessLogo", businessLogoInput.files[0]);
+        }
+
+        if (businessCoverInput?.files?.[0]) {
+            formData.append("businessCover", businessCoverInput.files[0]);
+        }
+
+        Array.from(businessPhotosInput?.files || []).slice(0, 6).forEach((file) => {
+            formData.append("businessPhotos", file);
+        });
+
+        try {
+            uploadBusinessImagesBtn.disabled = true;
+            uploadBusinessImagesBtn.textContent = "Subiendo imágenes...";
+
+            const response = await fetch(`${API_URL}/business/me/images`, {
+                method: "PATCH",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                showMessage(data.message || "No se pudieron subir las imágenes.");
+                return false;
+            }
+
+            currentBusiness = data.business || currentBusiness;
+            clearBusinessFileInputs();
+            renderBusinessImages(currentBusiness);
+            renderBusinessStatus(currentBusiness);
+
+            if (showSuccessMessage) {
+                showMessage(data.message || "Imágenes actualizadas correctamente.", true);
+            }
+
+            return true;
+
+        } catch (error) {
+            console.error("BUSINESS_IMAGES_FRONT_ERROR:", error);
+            showMessage("No se pudo conectar con el servidor al subir imágenes.");
+            return false;
+        } finally {
+            uploadBusinessImagesBtn.textContent = "Subir imágenes y enviar a revisión";
+            updateImagesButtonState();
+        }
+    }
+
+    function hasSelectedBusinessFiles() {
+        return Boolean(
+            businessLogoInput?.files?.length ||
+            businessCoverInput?.files?.length ||
+            businessPhotosInput?.files?.length
+        );
+    }
+
+    function renderBusinessImages(business) {
+        const canUpload = Boolean(business?.id);
+
+        if (businessMediaStatus) {
+            businessMediaStatus.textContent = canUpload
+                ? "Puedes actualizar logo, portada o galería. Cualquier cambio vuelve a enviar el emprendimiento a revisión."
+                : "Primero guarda la ficha del emprendimiento para activar la carga de imágenes.";
+        }
+
+        updateImagesButtonState();
+
+        renderExistingImagePreview(
+            businessLogoPreview,
+            business?.logo_url,
+            "Sin logo",
+            true
+        );
+
+        renderExistingImagePreview(
+            businessCoverPreview,
+            business?.cover_image_url,
+            "Sin portada",
+            false
+        );
+
+        renderGalleryImages(business?.photos || []);
+    }
+
+    function updateImagesButtonState() {
+        if (!uploadBusinessImagesBtn) return;
+        uploadBusinessImagesBtn.disabled = !currentBusiness?.id || !hasSelectedBusinessFiles();
+    }
+
+    function renderSelectedImagePreview(input, container, fallbackText, isSquare) {
+        const file = input?.files?.[0];
+
+        if (!file) {
+            const currentUrl = isSquare ? currentBusiness?.logo_url : currentBusiness?.cover_image_url;
+            renderExistingImagePreview(container, currentUrl, fallbackText, isSquare);
+            updateImagesButtonState();
+            return;
+        }
+
+        const previewUrl = URL.createObjectURL(file);
+        container.innerHTML = `<img src="${previewUrl}" alt="Vista previa">`;
+        updateImagesButtonState();
+    }
+
+    function renderExistingImagePreview(container, imageUrl, fallbackText) {
+        if (!container) return;
+
+        if (imageUrl) {
+            container.innerHTML = `<img src="${buildImageUrl(imageUrl)}" alt="Imagen del emprendimiento">`;
+            return;
+        }
+
+        container.innerHTML = `<span>${fallbackText}</span>`;
+    }
+
+    function renderSelectedGalleryPreview() {
+        const selectedFiles = Array.from(businessPhotosInput?.files || []).slice(0, 6);
+
+        if (selectedFiles.length === 0) {
+            renderGalleryImages(currentBusiness?.photos || []);
+            updateImagesButtonState();
+            return;
+        }
+
+        businessGalleryPreview.innerHTML = selectedFiles
+            .map((file) => `
+                <article class="business-gallery-item">
+                    <img src="${URL.createObjectURL(file)}" alt="Vista previa de galería">
+                    <span>Nueva foto</span>
+                </article>
+            `)
+            .join("");
+
+        updateImagesButtonState();
+    }
+
+    function renderGalleryImages(photos = []) {
+        if (!businessGalleryPreview) return;
+
+        if (!photos || photos.length === 0) {
+            businessGalleryPreview.innerHTML = `
+                <div class="business-gallery-empty">
+                    Aún no has subido fotos de galería.
+                </div>
+            `;
+            return;
+        }
+
+        businessGalleryPreview.innerHTML = photos
+            .map((photo) => `
+                <article class="business-gallery-item">
+                    <img src="${buildImageUrl(photo.image_url)}" alt="Foto del emprendimiento">
+                    <button type="button" data-photo-id="${photo.id}">Eliminar</button>
+                </article>
+            `)
+            .join("");
+
+        businessGalleryPreview.querySelectorAll("[data-photo-id]").forEach((button) => {
+            button.addEventListener("click", async () => {
+                await deleteBusinessPhoto(button.dataset.photoId);
+            });
+        });
+    }
+
+    async function deleteBusinessPhoto(photoId) {
+        const confirmed = confirm("¿Quieres eliminar esta foto de la galería?");
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`${API_URL}/business/me/photos/${photoId}`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                showMessage(data.message || "No se pudo eliminar la foto.");
+                return;
+            }
+
+            currentBusiness.photos = (currentBusiness.photos || []).filter((photo) => String(photo.id) !== String(photoId));
+            renderGalleryImages(currentBusiness.photos);
+            showMessage("Foto eliminada correctamente.", true);
+
+        } catch (error) {
+            console.error("DELETE_BUSINESS_PHOTO_FRONT_ERROR:", error);
+            showMessage("No se pudo conectar con el servidor.");
+        }
+    }
+
+    function clearBusinessFileInputs() {
+        if (businessLogoInput) businessLogoInput.value = "";
+        if (businessCoverInput) businessCoverInput.value = "";
+        if (businessPhotosInput) businessPhotosInput.value = "";
+    }
+
+    function buildImageUrl(url) {
+        if (!url) return "";
+        if (url.startsWith("http")) return url;
+        return `${SERVER_URL}${url}`;
     }
 
     function showMessage(text, success = false) {

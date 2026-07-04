@@ -263,6 +263,50 @@
                     </label>
                 </section>
 
+                <section class="business-form-section business-full" id="businessImagesSection">
+                    <div class="business-section-heading">
+                        <span>06</span>
+                        <div>
+                            <h2>Fotos e imagen visual</h2>
+                            <p>Agrega logo, portada y fotografías del emprendimiento. Al actualizar imágenes, la ficha volverá a revisión administrativa.</p>
+                        </div>
+                    </div>
+
+                    <div class="business-media-status" id="businessMediaStatus">
+                        Primero guarda la ficha del emprendimiento para activar la carga de imágenes.
+                    </div>
+
+                    <div class="business-media-grid">
+                        <label class="business-file-card">
+                            <span>Logo del negocio</span>
+                            <input type="file" id="businessLogoInput" accept="image/png, image/jpeg, image/webp">
+                            <div class="business-image-preview square" id="businessLogoPreview">
+                                <span>Sin logo</span>
+                            </div>
+                        </label>
+
+                        <label class="business-file-card">
+                            <span>Imagen de portada</span>
+                            <input type="file" id="businessCoverInput" accept="image/png, image/jpeg, image/webp">
+                            <div class="business-image-preview cover" id="businessCoverPreview">
+                                <span>Sin portada</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <label class="business-file-card business-full">
+                        <span>Galería de fotos</span>
+                        <input type="file" id="businessPhotosInput" accept="image/png, image/jpeg, image/webp" multiple>
+                        <small>Puedes subir hasta 6 fotos por intento. Formatos permitidos: JPG, PNG o WEBP.</small>
+                    </label>
+
+                    <div class="business-gallery-preview" id="businessGalleryPreview"></div>
+
+                    <button type="button" class="business-secondary-btn" id="uploadBusinessImagesBtn" disabled>
+                        Subir imágenes y enviar a revisión
+                    </button>
+                </section>
+
                 <p class="form-message business-full" id="businessMessage"></p>
 
                 <div class="business-actions business-full sticky-business-actions">
