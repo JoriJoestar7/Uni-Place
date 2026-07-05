@@ -82,7 +82,7 @@ if (accountBtn) {
         }
 
         try {
-            const response = await fetch(`${API_URL}/auth/me`, {
+            const response = await fetch(`${API_URL}/profile/me`, {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${token}`
@@ -356,7 +356,7 @@ function renderUserPanel() {
         businessInfoBtn?.classList.add("hidden");
         dashboardBusinessMini?.classList.add("hidden");
     }
-    }
+}
 
     function startNewChat() {
         const activeConversation = getActiveConversation();
@@ -1055,7 +1055,15 @@ function renderUserPanel() {
             day: "numeric"
         });
     }
+    function buildUploadUrl(url) {
+    if (!url) return "";
 
+    if (url.startsWith("http")) {
+        return url;
+    }
+
+    return `${API_BASE_URL}${url}`;
+    }
     function getInitials(value) {
         const parts = value.trim().split(/\s+/);
 
