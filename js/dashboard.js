@@ -31,6 +31,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const accountInfoBtn = document.getElementById("accountInfoBtn");
     const businessInfoBtn = document.getElementById("businessInfoBtn");
+    const infoAccordionBtn = document.getElementById("infoAccordionBtn");
+    const infoAccordionContent = document.getElementById("infoAccordionContent");
 
     let currentUser = null;
     let currentBusiness = null;
@@ -188,6 +190,27 @@ if (accountBtn) {
                 renderConversationList();
             });
         }
+
+        if (infoAccordionBtn && infoAccordionContent) {
+            infoAccordionBtn.addEventListener("click", () => {
+                const accordion = infoAccordionBtn.closest(".sidebar-info-accordion");
+                const isOpen = !infoAccordionContent.classList.contains("hidden");
+
+                infoAccordionContent.classList.toggle("hidden", isOpen);
+                infoAccordionBtn.setAttribute("aria-expanded", String(!isOpen));
+
+                const icon = infoAccordionBtn.querySelector("strong");
+
+                if (icon) {
+                    icon.textContent = isOpen ? "+" : "−";
+                }
+
+                if (accordion) {
+                    accordion.classList.toggle("open", !isOpen);
+                }
+            });
+        }
+
 
         if (chatForm) {
             chatForm.addEventListener("submit", async (event) => {

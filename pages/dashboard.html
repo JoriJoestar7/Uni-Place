@@ -36,18 +36,14 @@
                     Nuevo Chat
                 </button>
 
-                <nav class="sidebar-menu">
-                    <button id="businessInfoBtn" class="hidden" type="button">Mi emprendimiento</button>
+                <section class="sidebar-section sidebar-section-main">
+                    <p class="sidebar-section-title">Accesos rápidos</p>
 
-<nav class="sidebar-menu">
-    <a href="account.html">Mi cuenta</a>
-    <a href="about.html">Qué es UniPlace</a>
-    <a href="how-it-works.html">Cómo Funciona</a>
-    <a href="who-we-are.html">Quiénes Somos</a>
-    <a href="authors.html">Autores</a>
-    <a href="terms.html">Términos</a>
-</nav>
-                </nav>
+                    <nav class="sidebar-menu sidebar-menu-primary">
+                        <a href="account.html">Mi cuenta</a>
+                        <button id="businessInfoBtn" class="hidden" type="button">Mi emprendimiento</button>
+                    </nav>
+                </section>
 
                 <div class="dashboard-business-mini hidden" id="dashboardBusinessMini">
                     <p>Emprendimiento</p>
@@ -70,6 +66,21 @@
 
                     <div class="conversation-list" id="conversationList"></div>
                 </div>
+
+                <section class="sidebar-section sidebar-info-accordion">
+                    <button class="sidebar-accordion-btn" id="infoAccordionBtn" type="button" aria-expanded="false">
+                        <span>Información del proyecto</span>
+                        <strong>+</strong>
+                    </button>
+
+                    <nav class="sidebar-menu sidebar-menu-secondary hidden" id="infoAccordionContent">
+                        <a href="about.html">Qué es UniPlace</a>
+                        <a href="how-it-works.html">Cómo funciona</a>
+                        <a href="who-we-are.html">Quiénes somos</a>
+                        <a href="authors.html">Autores</a>
+                        <a href="terms.html">Términos</a>
+                    </nav>
+                </section>
             </div>
 
             <div class="sidebar-profile-card" id="dashboardUserCard">

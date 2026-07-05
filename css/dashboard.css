@@ -1056,3 +1056,127 @@
 .message-source-card small {
     margin-top: 10px;
 }
+
+/* =========================
+   SIDEBAR ORGANIZADA + ACORDEÓN
+========================= */
+
+.sidebar-scroll {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-section {
+    margin-bottom: 14px;
+}
+
+.sidebar-section-title {
+    margin: 0 4px 8px;
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+}
+
+.sidebar-menu-primary {
+    margin-bottom: 0;
+}
+
+.sidebar-menu-primary a,
+.sidebar-menu-primary button {
+    background: rgba(255, 255, 255, 0.035);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-menu-primary a:hover,
+.sidebar-menu-primary button:hover {
+    background: rgba(255, 255, 255, 0.075);
+}
+
+.conversation-area {
+    flex: 1;
+    min-height: 0;
+    margin-top: 2px;
+}
+
+.conversation-list {
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.sidebar-info-accordion {
+    flex-shrink: 0;
+    margin-top: 12px;
+    margin-bottom: 0;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.sidebar-accordion-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 13px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    background: rgba(255, 255, 255, 0.035);
+    color: var(--soft);
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-align: left;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar-accordion-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-accordion-btn strong {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.sidebar-menu-secondary {
+    margin: 8px 0 0;
+    padding: 6px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.sidebar-menu-secondary.hidden {
+    display: none;
+}
+
+.sidebar-menu-secondary a {
+    padding: 9px 11px;
+    font-size: 0.64rem;
+}
+
+.sidebar-info-accordion.open .sidebar-accordion-btn {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(0, 5, 92, 0.34);
+}
+
+.sidebar-info-accordion.open .sidebar-accordion-btn strong {
+    background: rgba(0, 5, 92, 0.8);
+}
+
+.sidebar.collapsed .sidebar-section,
+.sidebar.collapsed .sidebar-info-accordion {
+    opacity: 0;
+    visibility: hidden;
+}
