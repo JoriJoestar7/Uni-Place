@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const API_URL = "http://localhost:3000/api";
+    const API_BASE_URL = "http://localhost:3000";
     const STORAGE_KEY = "uniplace_conversations";
 
     const token = localStorage.getItem("uniplace_token");
@@ -21,10 +22,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const emptyState = document.getElementById("emptyState");
     const templateButtons = document.querySelectorAll("[data-template]");
 
-    const dashboardUserAvatar = document.getElementById("dashboardUserAvatar");
-    const dashboardUserName = document.getElementById("dashboardUserName");
-    const dashboardUserEmail = document.getElementById("dashboardUserEmail");
-    const dashboardUserRole = document.getElementById("dashboardUserRole");
+const dashboardUserAvatar = document.getElementById("sidebarUserAvatar");
+const dashboardUserName = document.getElementById("sidebarUserName");
+const dashboardUserEmail = document.getElementById("sidebarUserEmail");
+const dashboardUserRole = document.getElementById("sidebarUserRole");
     const dashboardBusinessMini = document.getElementById("dashboardBusinessMini");
     const dashboardBusinessName = document.getElementById("dashboardBusinessName");
     const dashboardBusinessStatus = document.getElementById("dashboardBusinessStatus");
@@ -295,53 +296,66 @@ if (accountBtn) {
         }
     }
 
-    function renderUserPanel() {
-        if (!currentUser) return;
+function renderUserPanel() {
+    if (!currentUser) return;
 
-        if (dashboardUserAvatar) {
-            dashboardUserAvatar.textContent = getInitials(currentUser.name || currentUser.email || "U");
+    const displayName = currentUser.display_name || currentUser.name || "Usuario";
+    const email = currentUser.email || "";
+    const avatarUrl = currentUser.avatar_url || null;
+
+    if (dashboardUserAvatar) {
+        dashboardUserAvatar.innerHTML = "";
+
+        if (avatarUrl) {
+            const img = document.createElement("img");
+            img.src = buildUploadUrl(avatarUrl);
+            img.alt = displayName;
+            dashboardUserAvatar.appendChild(img);
+        } else {
+            dashboardUserAvatar.textContent = getInitials(displayName || email || "U");
+        }
+    }
+
+    if (dashboardUserName) {
+        dashboardUserName.textContent = displayName;
+    }
+
+    if (dashboardUserEmail) {
+        dashboardUserEmail.textContent = email;
+    }
+
+    if (dashboardUserRole) {
+        const roleLabels = {
+            student: "Estudiante",
+            entrepreneur: "Emprendedor",
+            admin: "Administrador"
+        };
+
+        dashboardUserRole.textContent = roleLabels[currentUser.role] || currentUser.role || "Usuario";
+    }
+
+    if (currentUser.role === "entrepreneur" && currentBusiness) {
+        businessInfoBtn?.classList.remove("hidden");
+        dashboardBusinessMini?.classList.remove("hidden");
+
+        if (dashboardBusinessName) {
+            dashboardBusinessName.textContent = currentBusiness.business_name || "Mi emprendimiento";
         }
 
-        if (dashboardUserName) {
-            dashboardUserName.textContent = currentUser.name || "Usuario";
-        }
-
-        if (dashboardUserEmail) {
-            dashboardUserEmail.textContent = currentUser.email || "";
-        }
-
-        if (dashboardUserRole) {
-            const roleLabels = {
-                student: "Estudiante",
-                entrepreneur: "Emprendimiento",
-                admin: "Administrador"
+        if (dashboardBusinessStatus) {
+            const statusLabels = {
+                pending: "Pendiente",
+                approved: "Aprobado",
+                rejected: "Rechazado",
+                hidden: "Oculto"
             };
 
-            dashboardUserRole.textContent = roleLabels[currentUser.role] || currentUser.role;
+            dashboardBusinessStatus.textContent = statusLabels[currentBusiness.status] || currentBusiness.status;
         }
-
-        if (currentUser.role === "entrepreneur" && currentBusiness) {
-            businessInfoBtn?.classList.remove("hidden");
-            dashboardBusinessMini?.classList.remove("hidden");
-
-            if (dashboardBusinessName) {
-                dashboardBusinessName.textContent = currentBusiness.business_name || "Mi emprendimiento";
-            }
-
-            if (dashboardBusinessStatus) {
-                const statusLabels = {
-                    pending: "Pendiente",
-                    approved: "Aprobado",
-                    rejected: "Rechazado",
-                    hidden: "Oculto"
-                };
-
-                dashboardBusinessStatus.textContent = statusLabels[currentBusiness.status] || currentBusiness.status;
-            }
-        } else {
-            businessInfoBtn?.classList.add("hidden");
-            dashboardBusinessMini?.classList.add("hidden");
-        }
+    } else {
+        businessInfoBtn?.classList.add("hidden");
+        dashboardBusinessMini?.classList.add("hidden");
+    }
     }
 
     function startNewChat() {
@@ -1072,4 +1086,5 @@ if (accountBtn) {
         localStorage.removeItem("uniplace_user");
         window.location.href = "auth.html";
     }
+
 });

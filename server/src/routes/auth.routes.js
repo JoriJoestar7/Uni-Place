@@ -418,7 +418,20 @@ router.post("/login", async (req, res) => {
 router.get("/me", verifyToken, async (req, res) => {
     try {
         const [users] = await pool.execute(
-            "SELECT id, name, email, role, created_at FROM users WHERE id = ? LIMIT 1",
+            `SELECT 
+                id,
+                name,
+                display_name,
+                email,
+                role,
+                phone,
+                bio,
+                avatar_url,
+                email_verified,
+                created_at
+             FROM users 
+             WHERE id = ? 
+             LIMIT 1`,
             [req.user.id]
         );
 
@@ -429,9 +442,22 @@ router.get("/me", verifyToken, async (req, res) => {
             });
         }
 
+        const user = users[0];
+
         return res.json({
             ok: true,
-            user: users[0]
+            user: {
+                id: user.id,
+                name: user.name,
+                display_name: user.display_name,
+                email: user.email,
+                role: user.role,
+                phone: user.phone,
+                bio: user.bio,
+                avatar_url: user.avatar_url,
+                email_verified: Number(user.email_verified) === 1 ? 1 : 0,
+                created_at: user.created_at
+            }
         });
 
     } catch (error) {

@@ -1180,3 +1180,134 @@
     opacity: 0;
     visibility: hidden;
 }
+
+/* =========================
+   TARJETA DE USUARIO + TUERCA
+========================= */
+
+.sidebar-user-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    margin: 14px 18px 18px;
+    padding: 14px 46px 14px 14px;
+
+    border-radius: 22px;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+        rgba(17, 24, 39, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-user-avatar {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 999px;
+    background: var(--primary);
+    color: var(--text);
+
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.sidebar-user-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.sidebar-user-info strong {
+    color: var(--text);
+    font-size: 0.78rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-user-info span {
+    color: var(--soft);
+    font-size: 0.62rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-user-info small {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.6rem;
+    line-height: 1.2;
+}
+
+.sidebar-user-settings {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+
+    width: 30px;
+    height: 30px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 999px;
+    color: var(--soft);
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    transition:
+        color 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.sidebar-user-settings svg {
+    width: 15px;
+    height: 15px;
+    fill: currentColor;
+}
+
+.sidebar-user-settings:hover {
+    color: var(--text);
+    background: rgba(0, 5, 92, 0.8);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 10px 30px rgba(0, 5, 92, 0.42);
+}
+
+/* Cuando la sidebar está colapsada */
+.sidebar.collapsed .sidebar-user-card {
+    justify-content: center;
+    padding: 12px;
+    margin-inline: 14px;
+}
+
+.sidebar.collapsed .sidebar-user-info,
+.sidebar.collapsed .sidebar-user-settings {
+    display: none;
+}   
+
+.sidebar-user-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+    display: block;
+}
+.sidebar-user-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+    display: block;
+}

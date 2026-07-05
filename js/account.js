@@ -56,11 +56,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await response.json();
 
+            
+
             if (!response.ok || !data.ok) {
                 showMessage(data.message || "No se pudo actualizar el perfil.");
                 return;
             }
-
+if (data.user) {
+    localStorage.setItem("uniplace_user", JSON.stringify(data.user));
+}
             updateLocalUser(data.user);
             fillProfile(data.user);
             showMessage("Perfil actualizado correctamente.", true);
