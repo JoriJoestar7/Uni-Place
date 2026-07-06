@@ -34,6 +34,12 @@ const dashboardUserRole = document.getElementById("sidebarUserRole");
     const businessInfoBtn = document.getElementById("businessInfoBtn");
     const infoAccordionBtn = document.getElementById("infoAccordionBtn");
     const infoAccordionContent = document.getElementById("infoAccordionContent");
+    const collapsedNewChatBtn = document.getElementById("collapsedNewChatBtn");
+    const collapsedSearchBtn = document.getElementById("collapsedSearchBtn");
+    const collapsedChatsBtn = document.getElementById("collapsedChatsBtn");
+    const collapsedInfoBtn = document.getElementById("collapsedInfoBtn");
+    const collapsedUserBtn = document.getElementById("collapsedUserBtn");
+    const collapsedUserInitial = document.getElementById("collapsedUserInitial");
 
     let currentUser = null;
     let currentBusiness = null;
@@ -168,6 +174,41 @@ if (!allowedRoles.includes(currentUser.role)) {
         if (sidebarToggle) {
             sidebarToggle.addEventListener("click", () => {
                 sidebar.classList.toggle("collapsed");
+            });
+        }
+
+
+        if (collapsedNewChatBtn) {
+            collapsedNewChatBtn.addEventListener("click", () => {
+                startNewChat();
+            });
+        }
+
+        if (collapsedSearchBtn) {
+            collapsedSearchBtn.addEventListener("click", () => {
+                sidebar?.classList.remove("collapsed");
+
+                setTimeout(() => {
+                    conversationSearch?.focus();
+                }, 0);
+            });
+        }
+
+        if (collapsedChatsBtn) {
+            collapsedChatsBtn.addEventListener("click", () => {
+                sidebar?.classList.remove("collapsed");
+            });
+        }
+
+        if (collapsedInfoBtn) {
+            collapsedInfoBtn.addEventListener("click", () => {
+                window.location.href = "about.html";
+            });
+        }
+
+        if (collapsedUserBtn) {
+            collapsedUserBtn.addEventListener("click", () => {
+                window.location.href = "account.html";
             });
         }
 
@@ -314,6 +355,20 @@ function renderUserPanel() {
             dashboardUserAvatar.appendChild(img);
         } else {
             dashboardUserAvatar.textContent = getInitials(displayName || email || "U");
+        }
+    }
+
+
+    if (collapsedUserInitial) {
+        collapsedUserInitial.innerHTML = "";
+
+        if (avatarUrl) {
+            const img = document.createElement("img");
+            img.src = buildUploadUrl(avatarUrl);
+            img.alt = displayName;
+            collapsedUserInitial.appendChild(img);
+        } else {
+            collapsedUserInitial.textContent = getInitials(displayName || email || "U");
         }
     }
 
