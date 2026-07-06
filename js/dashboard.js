@@ -110,11 +110,12 @@ if (accountBtn) {
                 if (!hasBusiness) return false;
             }
 
-            if (!["student", "entrepreneur"].includes(currentUser.role)) {
-                redirectToAuth();
-                return false;
-            }
+const allowedRoles = ["student", "professor", "entrepreneur"];
 
+if (!allowedRoles.includes(currentUser.role)) {
+    redirectToAuth();
+    return;
+}
             return true;
 
         } catch (error) {
@@ -327,6 +328,7 @@ function renderUserPanel() {
     if (dashboardUserRole) {
         const roleLabels = {
             student: "Estudiante",
+            professor: "Profesor",
             entrepreneur: "Emprendedor",
             admin: "Administrador"
         };
@@ -733,6 +735,7 @@ function renderUserPanel() {
 
         const roleLabels = {
             student: "Estudiante",
+            professor: "Profesor",
             entrepreneur: "Emprendimiento",
             admin: "Administrador"
         };

@@ -199,6 +199,11 @@ function redirectByRole(user) {
         return;
     }
 
+    if (user.role === "student" || user.role === "professor") {
+        window.location.href = "dashboard.html";
+        return;
+    }
+
     window.location.href = "dashboard.html";
 }
 });

@@ -35,7 +35,7 @@ router.post("/register", async (req, res) => {
             });
         }
 
-        const allowedRoles = ["student", "entrepreneur"];
+        const allowedRoles = ["student", "professor","entrepreneur"];
         const finalRole = allowedRoles.includes(role) ? role : "student";
 
         const normalizedEmail = email.trim().toLowerCase();
