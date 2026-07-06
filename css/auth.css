@@ -225,3 +225,22 @@
 .auth-card > .auth-secondary-action {
     margin-top: 16px;
 }
+
+.register-email-warning {
+    margin-top: -4px;
+    margin-bottom: 12px;
+    padding: 11px 13px;
+
+    border-radius: 14px;
+    background: rgba(0, 5, 92, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.64rem;
+    line-height: 1.55;
+}
+
+.register-email-warning strong {
+    color: #ffffff;
+    font-weight: 800;
+}
