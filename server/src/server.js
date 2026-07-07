@@ -12,19 +12,50 @@ dotenv.config();
 
 const app = express();
 
+const configuredOrigins = [
+    process.env.FRONTEND_URL,
+    ...(process.env.FRONTEND_URLS || "").split(",")
+]
+    .map((origin) => origin?.trim())
+    .filter(Boolean);
+
+const defaultLocalOrigins = [
+    "http://127.0.0.1:5500",
+    "http://localhost:5500"
+];
+
 app.use(cors({
-    origin: [
-        process.env.FRONTEND_URL,
-        "http://127.0.0.1:5500",
-        "http://localhost:5500"
-    ],
+    origin(origin, callback) {
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        const isAllowedOrigin = [
+            ...configuredOrigins,
+            ...defaultLocalOrigins
+        ].includes(origin);
+
+        let isVercelPreview = false;
+
+        try {
+            isVercelPreview = /\.vercel\.app$/.test(new URL(origin).hostname);
+        } catch {
+            isVercelPreview = false;
+        }
+
+        if (isAllowedOrigin || isVercelPreview) {
+            return callback(null, true);
+        }
+
+        return callback(new Error("Origen no permitido por CORS."));
+    },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use("/uploads", express.static("public/uploads"));
 
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 app.get("/", (req, res) => {
     res.json({

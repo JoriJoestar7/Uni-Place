@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const API_URL = "http://localhost:3000/api";
+    const API_URL = window.UNIPLACE_CONFIG?.apiBaseUrl || "http://localhost:3000/api";
 
     const cursorGlow = document.querySelector(".cursor-glow");
 

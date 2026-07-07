@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const API_URL = "http://localhost:3000/api";
-    const API_BASE_URL = "http://localhost:3000";
+    const API_URL = window.UNIPLACE_CONFIG?.apiBaseUrl || "http://localhost:3000/api";
+    const API_BASE_URL = window.UNIPLACE_CONFIG?.serverBaseUrl || "http://localhost:3000";
     const STORAGE_KEY = "uniplace_conversations";
 
     const token = localStorage.getItem("uniplace_token");
@@ -1285,7 +1285,7 @@ function renderUserPanel() {
             return "Podemos organizar un plan de estudio por temas, dificultad y tiempo disponible. También puedo convertir tus apuntes en preguntas de práctica.";
         }
 
-        return "No pude conectar con el motor de respuestas del backend en este momento. Revisa que el servidor esté corriendo en http://localhost:3000 y vuelve a intentarlo.";
+        return `No pude conectar con el motor de respuestas del backend en este momento. Revisa que el servidor esté corriendo en ${API_BASE_URL} y vuelve a intentarlo.`;
     }
 
     function showTypingIndicator() {

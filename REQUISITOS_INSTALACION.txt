@@ -16,7 +16,10 @@ REQUISITOS DE INSTALACION - UNIPLACE
 
 3. Variables requeridas en server/.env
 - PORT
+- NODE_ENV
 - FRONTEND_URL
+- FRONTEND_URLS
+- DATABASE_URL
 - DB_HOST
 - DB_PORT
 - DB_USER
@@ -55,6 +58,7 @@ REQUISITOS DE INSTALACION - UNIPLACE
 - Para documentos de validacion se recomienda crear una tabla business_documents con campos equivalentes a:
   business_id, document_type, document_label, original_name, file_url, mime_type, file_size, uploaded_at.
 - Si esa tabla no existe, UniPlace guarda temporalmente un manifiesto JSON local dentro de public/uploads/businesses/documents.
+- Para produccion, ejecutar database/migrations/001_deploy_support.sql.
 
 6. Archivos subidos
 - Avatares: server/public/uploads/avatars
@@ -74,3 +78,9 @@ REQUISITOS DE INSTALACION - UNIPLACE
 - Revisar permisos de archivos subidos.
 - Crear la tabla business_documents para guardar documentos en base de datos.
 - Usar almacenamiento privado para RUC/permisos si la aplicacion maneja informacion sensible real.
+
+9. Deploy recomendado
+- Backend: Railway, usando la carpeta server como root directory.
+- Base de datos: MySQL en Railway.
+- Frontend: Vercel, usando la raiz del repositorio.
+- Guia paso a paso: DEPLOY.md.

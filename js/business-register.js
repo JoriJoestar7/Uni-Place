@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const API_URL = "http://localhost:3000/api";
-    const SERVER_URL = "http://localhost:3000";
+    const API_URL = window.UNIPLACE_CONFIG?.apiBaseUrl || "http://localhost:3000/api";
+    const SERVER_URL = window.UNIPLACE_CONFIG?.serverBaseUrl || "http://localhost:3000";
 
     const token = localStorage.getItem("uniplace_token");
     const userRaw = localStorage.getItem("uniplace_user");
