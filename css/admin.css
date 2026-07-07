@@ -485,3 +485,35 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.04);
 }
+
+.admin-document-list {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-document-list a {
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: var(--transition-soft);
+}
+
+.admin-document-list a:hover {
+    background: rgba(255, 255, 255, 0.075);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.admin-document-list strong {
+    color: var(--text);
+    font-size: 0.7rem;
+}
+
+.admin-document-list span {
+    color: var(--soft);
+    font-size: 0.66rem;
+    line-height: 1.5;
+    word-break: break-word;
+}

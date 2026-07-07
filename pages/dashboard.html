@@ -7,6 +7,7 @@
 
     <link rel="icon" href="../assets/icon.png">
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="../css/dashboard.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,6 +39,7 @@
 
                 <section class="sidebar-section sidebar-section-main">
                     <nav class="sidebar-menu sidebar-menu-primary">
+                        <button id="mapViewBtn" type="button">Mapa La Mariscal</button>
                         <button id="businessInfoBtn" class="hidden" type="button">Mi emprendimiento</button>
                     </nav>
                 </section>
@@ -118,6 +120,15 @@
                     </svg>
                 </button>
 
+                <button class="collapsed-icon-btn" id="collapsedMapBtn" type="button" title="Mapa La Mariscal" aria-label="Mapa La Mariscal">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 18 3 21V6l6-3 6 3 6-3v15l-6 3-6-3Z"/>
+                        <path d="M9 3v15"/>
+                        <path d="M15 6v15"/>
+                        <circle cx="15" cy="11" r="2"/>
+                    </svg>
+                </button>
+
                 <button class="collapsed-icon-btn" id="collapsedInfoBtn" type="button" title="Información del proyecto" aria-label="Información del proyecto">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"/>
@@ -189,6 +200,7 @@
         </main>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../js/dashboard.js"></script>
 </body>
 </html>

@@ -333,7 +333,7 @@ router.post("/resend-verification", async (req, res) => {
 
 router.post("/login", async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, rememberMe } = req.body;
 
         if (!email || !password) {
             return res.status(400).json({
@@ -390,7 +390,7 @@ router.post("/login", async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role
-        });
+        }, Boolean(rememberMe));
 
         return res.json({
             ok: true,
@@ -470,7 +470,7 @@ router.get("/me", verifyToken, async (req, res) => {
     }
 });
 
-function createToken(user) {
+function createToken(user, rememberMe = false) {
     return jwt.sign(
         {
             id: user.id,
@@ -480,7 +480,9 @@ function createToken(user) {
         },
         process.env.JWT_SECRET,
         {
-            expiresIn: process.env.JWT_EXPIRES_IN || "2h"
+            expiresIn: rememberMe
+                ? (process.env.JWT_REMEMBER_EXPIRES_IN || "30d")
+                : (process.env.JWT_EXPIRES_IN || "2h")
         }
     );
 }

@@ -32,17 +32,21 @@ const dashboardUserRole = document.getElementById("sidebarUserRole");
 
     const accountInfoBtn = document.getElementById("accountInfoBtn");
     const businessInfoBtn = document.getElementById("businessInfoBtn");
+    const mapViewBtn = document.getElementById("mapViewBtn");
     const infoAccordionBtn = document.getElementById("infoAccordionBtn");
     const infoAccordionContent = document.getElementById("infoAccordionContent");
     const collapsedNewChatBtn = document.getElementById("collapsedNewChatBtn");
     const collapsedSearchBtn = document.getElementById("collapsedSearchBtn");
     const collapsedChatsBtn = document.getElementById("collapsedChatsBtn");
+    const collapsedMapBtn = document.getElementById("collapsedMapBtn");
     const collapsedInfoBtn = document.getElementById("collapsedInfoBtn");
     const collapsedUserBtn = document.getElementById("collapsedUserBtn");
     const collapsedUserInitial = document.getElementById("collapsedUserInitial");
 
     let currentUser = null;
     let currentBusiness = null;
+    let mariscalMap = null;
+    let mariscalMarkers = [];
 
     let conversations = [];
     let activeConversationId = null;
@@ -200,6 +204,12 @@ if (!allowedRoles.includes(currentUser.role)) {
             });
         }
 
+        if (collapsedMapBtn) {
+            collapsedMapBtn.addEventListener("click", () => {
+                renderMapView();
+            });
+        }
+
         if (collapsedInfoBtn) {
             collapsedInfoBtn.addEventListener("click", () => {
                 window.location.href = "about.html";
@@ -334,6 +344,12 @@ if (!allowedRoles.includes(currentUser.role)) {
         if (businessInfoBtn) {
             businessInfoBtn.addEventListener("click", () => {
                 renderBusinessView();
+            });
+        }
+
+        if (mapViewBtn) {
+            mapViewBtn.addEventListener("click", () => {
+                renderMapView();
             });
         }
     }
@@ -927,6 +943,271 @@ function renderUserPanel() {
         }
     }
 
+    async function renderMapView() {
+        if (!chatWindow) return;
+
+        chatWindow.innerHTML = "";
+
+        if (currentChatTitle) {
+            currentChatTitle.textContent = "Mapa La Mariscal";
+        }
+
+        const view = document.createElement("section");
+        view.className = "dashboard-map-view";
+        view.innerHTML = `
+            <div class="dashboard-map-head">
+                <div>
+                    <span class="dashboard-info-kicker">Emprendimientos aprobados</span>
+                    <h2>La Mariscal</h2>
+                    <p>Negocios visibles para IA dentro del sector La Mariscal. El mapa usa posiciones aproximadas cuando la ficha no tiene coordenadas reales.</p>
+                </div>
+
+                <button class="dashboard-info-btn" type="button" id="refreshMapBtn">Actualizar mapa</button>
+            </div>
+
+            <div class="dashboard-map-shell">
+                <div class="dashboard-map-canvas" id="dashboardMapCanvas">
+                    <div class="map-zone-label">La Mariscal · Quito</div>
+                    <div class="map-loading">Cargando mapa...</div>
+                </div>
+
+                <aside class="dashboard-map-list" id="dashboardMapList"></aside>
+            </div>
+        `;
+
+        chatWindow.appendChild(view);
+
+        document.getElementById("refreshMapBtn")?.addEventListener("click", loadMapBusinesses);
+
+        await loadMapBusinesses();
+    }
+
+    async function loadMapBusinesses() {
+        const canvas = document.getElementById("dashboardMapCanvas");
+        const list = document.getElementById("dashboardMapList");
+
+        if (!canvas || !list) return;
+
+        canvas.querySelectorAll(".map-marker").forEach((marker) => marker.remove());
+        const loading = canvas.querySelector(".map-loading");
+        if (loading) loading.textContent = "Cargando mapa...";
+        list.innerHTML = "";
+
+        try {
+            const response = await fetch(`${API_URL}/business/map`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                throw new Error(data.message || "No se pudo cargar el mapa.");
+            }
+
+            renderMapBusinesses(data.businesses || []);
+
+        } catch (error) {
+            console.error("MAP_FRONT_ERROR:", error);
+            if (loading) loading.textContent = "No se pudo cargar el mapa.";
+            list.innerHTML = `<p class="dashboard-map-empty">Revisa que el servidor esté activo y vuelve a intentar.</p>`;
+        }
+    }
+
+    function renderMapBusinesses(businesses) {
+        const canvas = document.getElementById("dashboardMapCanvas");
+        const list = document.getElementById("dashboardMapList");
+        const loading = canvas?.querySelector(".map-loading");
+
+        if (!canvas || !list) return;
+
+        resetLeafletMap();
+
+        if (loading) {
+            loading.textContent = businesses.length
+                ? `${businesses.length} emprendimiento${businesses.length === 1 ? "" : "s"}`
+                : "Sin emprendimientos aprobados en La Mariscal.";
+        }
+
+        if (businesses.length === 0) {
+            list.innerHTML = `
+                <p class="dashboard-map-empty">
+                    Cuando apruebes emprendimientos ubicados en La Mariscal y activos para IA, aparecerán aquí.
+                </p>
+            `;
+            return;
+        }
+
+        list.innerHTML = businesses.map((business) => createMapBusinessCard(business)).join("");
+
+        if (window.L) {
+            renderLeafletMap(businesses);
+        } else {
+            renderStaticFallbackMap(businesses);
+        }
+
+        list.querySelectorAll("[data-map-card]").forEach((card) => {
+            card.addEventListener("click", () => {
+                focusMapBusiness(card.dataset.mapCard);
+            });
+        });
+    }
+
+    function renderLeafletMap(businesses) {
+        const canvas = document.getElementById("dashboardMapCanvas");
+
+        if (!canvas || !window.L) return;
+
+        mariscalMap = L.map(canvas, {
+            zoomControl: true,
+            scrollWheelZoom: true
+        }).setView([-0.2009, -78.4898], 15);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap"
+        }).addTo(mariscalMap);
+
+        const markerBounds = [];
+
+        mariscalMarkers = businesses.map((business, index) => {
+            const marker = L.marker([business.lat, business.lng], {
+                title: business.business_name
+            }).addTo(mariscalMap);
+
+            marker.bindPopup(createMapPopup(business, index + 1));
+            marker.on("click", () => focusMapBusiness(business.id, false));
+
+            markerBounds.push([business.lat, business.lng]);
+
+            return {
+                businessId: String(business.id),
+                marker
+            };
+        });
+
+        if (markerBounds.length > 1) {
+            mariscalMap.fitBounds(markerBounds, {
+                padding: [34, 34],
+                maxZoom: 16
+            });
+        }
+
+        setTimeout(() => {
+            mariscalMap?.invalidateSize();
+        }, 80);
+    }
+
+    function renderStaticFallbackMap(businesses) {
+        const canvas = document.getElementById("dashboardMapCanvas");
+
+        if (!canvas) return;
+
+        canvas.classList.add("map-fallback");
+        canvas.insertAdjacentHTML("beforeend", `
+            <div class="map-street horizontal street-one"></div>
+            <div class="map-street horizontal street-two"></div>
+            <div class="map-street horizontal street-three"></div>
+            <div class="map-street vertical street-four"></div>
+            <div class="map-street vertical street-five"></div>
+        `);
+
+        const bounds = {
+            north: -0.1908,
+            south: -0.2116,
+            west: -78.4986,
+            east: -78.4810
+        };
+
+        businesses.forEach((business, index) => {
+            const marker = document.createElement("button");
+            marker.className = "map-marker";
+            marker.type = "button";
+            marker.title = business.business_name;
+            marker.dataset.businessId = business.id;
+            marker.textContent = String(index + 1);
+
+            const left = ((business.lng - bounds.west) / (bounds.east - bounds.west)) * 100;
+            const top = ((bounds.north - business.lat) / (bounds.north - bounds.south)) * 100;
+
+            marker.style.left = `${Math.min(92, Math.max(8, left))}%`;
+            marker.style.top = `${Math.min(88, Math.max(12, top))}%`;
+
+            marker.addEventListener("click", () => {
+                focusMapBusiness(business.id);
+            });
+
+            canvas.appendChild(marker);
+        });
+    }
+
+    function resetLeafletMap() {
+        if (mariscalMap) {
+            mariscalMap.remove();
+            mariscalMap = null;
+        }
+
+        mariscalMarkers = [];
+    }
+
+    function createMapBusinessCard(business) {
+        const location = [business.campus_zone, business.address, business.reference_point]
+            .filter(Boolean)
+            .join(" · ");
+        const contact = business.whatsapp || business.phone || business.instagram_url || business.website_url || "";
+
+        return `
+            <article class="dashboard-map-card" data-map-card="${escapeHtml(business.id)}">
+                <strong>${escapeHtml(business.business_name)}</strong>
+                <span>${escapeHtml(business.category || "Emprendimiento")}</span>
+                <p>${escapeHtml(business.description || "Negocio aprobado y visible para IA.")}</p>
+                ${location ? `<small>${escapeHtml(location)}</small>` : ""}
+                ${business.price_range ? `<small>${escapeHtml(business.price_range)}</small>` : ""}
+                ${contact ? `<small>${escapeHtml(contact)}</small>` : ""}
+            </article>
+        `;
+    }
+
+    function focusMapBusiness(businessId) {
+        document.querySelectorAll(".map-marker, .dashboard-map-card").forEach((element) => {
+            element.classList.remove("active");
+        });
+
+        document.querySelector(`.map-marker[data-business-id="${CSS.escape(String(businessId))}"]`)?.classList.add("active");
+
+        const card = document.querySelector(`.dashboard-map-card[data-map-card="${CSS.escape(String(businessId))}"]`);
+        card?.classList.add("active");
+        card?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+
+        const markerEntry = mariscalMarkers.find((entry) => entry.businessId === String(businessId));
+
+        if (markerEntry && mariscalMap) {
+            mariscalMap.setView(markerEntry.marker.getLatLng(), Math.max(mariscalMap.getZoom(), 16), {
+                animate: true
+            });
+            markerEntry.marker.openPopup();
+        }
+    }
+
+    function createMapPopup(business, position) {
+        const location = [business.campus_zone, business.address, business.reference_point]
+            .filter(Boolean)
+            .join(" · ");
+        const contact = business.whatsapp || business.phone || business.instagram_url || business.website_url || "";
+
+        return `
+            <div class="map-popup">
+                <span>${position}. ${escapeHtml(business.category || "Emprendimiento")}</span>
+                <strong>${escapeHtml(business.business_name)}</strong>
+                ${business.description ? `<p>${escapeHtml(business.description)}</p>` : ""}
+                ${location ? `<small>${escapeHtml(location)}</small>` : ""}
+                ${business.price_range ? `<small>${escapeHtml(business.price_range)}</small>` : ""}
+                ${contact ? `<small>${escapeHtml(contact)}</small>` : ""}
+            </div>
+        `;
+    }
+
     function formatBusinessPriceRange(min, max) {
         if (min !== null && min !== undefined && max !== null && max !== undefined) return `$${min} - $${max}`;
         if (min !== null && min !== undefined) return `Desde $${min}`;
@@ -1144,12 +1425,14 @@ function renderUserPanel() {
     function logout() {
         localStorage.removeItem("uniplace_token");
         localStorage.removeItem("uniplace_user");
+        localStorage.removeItem("uniplace_remember_me");
         window.location.href = "auth.html";
     }
 
     function redirectToAuth() {
         localStorage.removeItem("uniplace_token");
         localStorage.removeItem("uniplace_user");
+        localStorage.removeItem("uniplace_remember_me");
         window.location.href = "auth.html";
     }
 

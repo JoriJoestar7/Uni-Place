@@ -130,6 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             localStorage.removeItem("uniplace_token");
             localStorage.removeItem("uniplace_user");
+            localStorage.removeItem("uniplace_remember_me");
             localStorage.removeItem("uniplace_pending_email");
 
             setTimeout(() => {

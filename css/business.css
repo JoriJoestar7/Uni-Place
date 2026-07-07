@@ -436,8 +436,47 @@
     background: rgba(255, 255, 255, 0.14);
 }
 
+.business-documents-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.business-documents-list {
+    display: grid;
+    gap: 10px;
+}
+
+.business-document-item {
+    display: grid;
+    gap: 6px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: var(--transition-soft);
+}
+
+.business-document-item:hover {
+    background: rgba(255, 255, 255, 0.075);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.business-document-item strong {
+    color: var(--text);
+    font-size: 0.76rem;
+}
+
+.business-document-item span {
+    color: var(--soft);
+    font-size: 0.68rem;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
 @media (max-width: 720px) {
-    .business-media-grid {
+    .business-media-grid,
+    .business-documents-grid {
         grid-template-columns: 1fr;
     }
 }

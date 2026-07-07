@@ -129,6 +129,7 @@ if (data.user) {
     logoutBtn.addEventListener("click", () => {
         localStorage.removeItem("uniplace_token");
         localStorage.removeItem("uniplace_user");
+        localStorage.removeItem("uniplace_remember_me");
         window.location.href = "auth.html";
     });
 

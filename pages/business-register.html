@@ -307,6 +307,46 @@
                     </button>
                 </section>
 
+                <section class="business-form-section business-full" id="businessDocumentsSection">
+                    <div class="business-section-heading">
+                        <span>07</span>
+                        <div>
+                            <h2>Documentos de validación</h2>
+                            <p>Para que un administrador pueda aprobar el emprendimiento, sube tu RUC y un permiso, patente o autorización vigente.</p>
+                        </div>
+                    </div>
+
+                    <div class="business-media-status" id="businessDocumentsStatus">
+                        Primero guarda la ficha del emprendimiento para activar la carga de documentos.
+                    </div>
+
+                    <div class="business-documents-grid">
+                        <label class="business-file-card">
+                            <span>RUC *</span>
+                            <input type="file" id="rucDocumentInput" accept="application/pdf,image/png,image/jpeg,image/webp">
+                            <small>PDF o imagen legible del RUC.</small>
+                        </label>
+
+                        <label class="business-file-card">
+                            <span>Permiso o patente *</span>
+                            <input type="file" id="permitDocumentInput" accept="application/pdf,image/png,image/jpeg,image/webp">
+                            <small>Puede ser patente municipal, permiso de funcionamiento o autorización equivalente.</small>
+                        </label>
+
+                        <label class="business-file-card">
+                            <span>Documento adicional</span>
+                            <input type="file" id="extraDocumentInput" accept="application/pdf,image/png,image/jpeg,image/webp">
+                            <small>Opcional: certificado, autorización universitaria u otro respaldo.</small>
+                        </label>
+                    </div>
+
+                    <div class="business-documents-list" id="businessDocumentsList"></div>
+
+                    <button type="button" class="business-secondary-btn" id="uploadBusinessDocumentsBtn" disabled>
+                        Subir documentos para revisión
+                    </button>
+                </section>
+
                 <p class="form-message business-full" id="businessMessage"></p>
 
                 <div class="business-actions business-full sticky-business-actions">

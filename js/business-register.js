@@ -47,6 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const businessCoverPreview = document.getElementById("businessCoverPreview");
     const businessGalleryPreview = document.getElementById("businessGalleryPreview");
     const uploadBusinessImagesBtn = document.getElementById("uploadBusinessImagesBtn");
+    const businessDocumentsStatus = document.getElementById("businessDocumentsStatus");
+    const businessDocumentsList = document.getElementById("businessDocumentsList");
+    const rucDocumentInput = document.getElementById("rucDocumentInput");
+    const permitDocumentInput = document.getElementById("permitDocumentInput");
+    const extraDocumentInput = document.getElementById("extraDocumentInput");
+    const uploadBusinessDocumentsBtn = document.getElementById("uploadBusinessDocumentsBtn");
 
     let currentBusiness = null;
 
@@ -102,6 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             currentBusiness = data.business || currentBusiness;
             renderBusinessImages(currentBusiness);
+            renderBusinessDocuments(currentBusiness);
 
             if (hasSelectedBusinessFiles()) {
                 showMessage("Ficha guardada. Subiendo imágenes del emprendimiento...", true);
@@ -109,6 +116,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 const imagesUploaded = await uploadBusinessImages(false);
 
                 if (!imagesUploaded) {
+                    return;
+                }
+            }
+
+            if (hasSelectedBusinessDocuments()) {
+                showMessage("Ficha guardada. Subiendo documentos de validación...", true);
+
+                const documentsUploaded = await uploadBusinessDocuments(false);
+
+                if (!documentsUploaded) {
                     return;
                 }
             }
@@ -153,6 +170,14 @@ document.addEventListener("DOMContentLoaded", () => {
         await uploadBusinessImages(true);
     });
 
+    [rucDocumentInput, permitDocumentInput, extraDocumentInput].forEach((input) => {
+        input?.addEventListener("change", updateDocumentsButtonState);
+    });
+
+    uploadBusinessDocumentsBtn?.addEventListener("click", async () => {
+        await uploadBusinessDocuments(true);
+    });
+
     async function checkExistingBusiness() {
         try {
             const response = await fetch(`${API_URL}/business/me`, {
@@ -165,6 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.status === 404) {
                 currentBusiness = null;
                 renderBusinessImages(null);
+                renderBusinessDocuments(null);
 
                 showStatusBox({
                     title: "Nueva ficha de emprendimiento",
@@ -184,6 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
             currentBusiness = data.business;
             fillBusinessForm(data.business);
             renderBusinessImages(data.business);
+            renderBusinessDocuments(data.business);
             renderBusinessStatus(data.business);
 
         } catch (error) {
@@ -588,11 +615,84 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    async function uploadBusinessDocuments(showSuccessMessage = true) {
+        if (!currentBusiness) {
+            showMessage("Primero guarda la ficha del emprendimiento antes de subir documentos.");
+            return false;
+        }
+
+        if (!hasSelectedBusinessDocuments()) {
+            showMessage("Selecciona al menos un documento para subir.");
+            return false;
+        }
+
+        const formData = new FormData();
+
+        if (rucDocumentInput?.files?.[0]) {
+            formData.append("rucDocument", rucDocumentInput.files[0]);
+        }
+
+        if (permitDocumentInput?.files?.[0]) {
+            formData.append("permitDocument", permitDocumentInput.files[0]);
+        }
+
+        if (extraDocumentInput?.files?.[0]) {
+            formData.append("extraDocument", extraDocumentInput.files[0]);
+        }
+
+        try {
+            uploadBusinessDocumentsBtn.disabled = true;
+            uploadBusinessDocumentsBtn.textContent = "Subiendo documentos...";
+
+            const response = await fetch(`${API_URL}/business/me/documents`, {
+                method: "PATCH",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                showMessage(data.message || "No se pudieron subir los documentos.");
+                return false;
+            }
+
+            currentBusiness = data.business || currentBusiness;
+            clearBusinessDocumentInputs();
+            renderBusinessDocuments(currentBusiness);
+            renderBusinessStatus(currentBusiness);
+
+            if (showSuccessMessage) {
+                showMessage(data.message || "Documentos actualizados correctamente.", true);
+            }
+
+            return true;
+
+        } catch (error) {
+            console.error("BUSINESS_DOCUMENTS_FRONT_ERROR:", error);
+            showMessage("No se pudo conectar con el servidor al subir documentos.");
+            return false;
+        } finally {
+            uploadBusinessDocumentsBtn.textContent = "Subir documentos para revisión";
+            updateDocumentsButtonState();
+        }
+    }
+
     function hasSelectedBusinessFiles() {
         return Boolean(
             businessLogoInput?.files?.length ||
             businessCoverInput?.files?.length ||
             businessPhotosInput?.files?.length
+        );
+    }
+
+    function hasSelectedBusinessDocuments() {
+        return Boolean(
+            rucDocumentInput?.files?.length ||
+            permitDocumentInput?.files?.length ||
+            extraDocumentInput?.files?.length
         );
     }
 
@@ -624,9 +724,52 @@ document.addEventListener("DOMContentLoaded", () => {
         renderGalleryImages(business?.photos || []);
     }
 
+    function renderBusinessDocuments(business) {
+        const canUpload = Boolean(business?.id);
+        const documents = Array.isArray(business?.documents) ? business.documents : [];
+        const hasRuc = documents.some((document) => document.type === "ruc");
+        const hasPermit = documents.some((document) => document.type === "permit");
+
+        if (businessDocumentsStatus) {
+            if (!canUpload) {
+                businessDocumentsStatus.textContent = "Primero guarda la ficha del emprendimiento para activar la carga de documentos.";
+            } else if (hasRuc && hasPermit) {
+                businessDocumentsStatus.textContent = "Documentos mínimos cargados. Un administrador podrá revisar el RUC y el permiso antes de aprobar.";
+            } else {
+                businessDocumentsStatus.textContent = "Falta subir RUC y permiso/patente. Sin esos documentos el administrador no podrá aprobar el emprendimiento.";
+            }
+        }
+
+        if (!businessDocumentsList) return;
+
+        if (documents.length === 0) {
+            businessDocumentsList.innerHTML = `
+                <div class="business-gallery-empty">
+                    Aún no has subido documentos de validación.
+                </div>
+            `;
+        } else {
+            businessDocumentsList.innerHTML = documents
+                .map((document) => `
+                    <a class="business-document-item" href="${buildImageUrl(document.file_url)}" target="_blank" rel="noopener">
+                        <strong>${escapeAttribute(document.label || document.type || "Documento")}</strong>
+                        <span>${escapeAttribute(document.original_name || "Archivo cargado")}</span>
+                    </a>
+                `)
+                .join("");
+        }
+
+        updateDocumentsButtonState();
+    }
+
     function updateImagesButtonState() {
         if (!uploadBusinessImagesBtn) return;
         uploadBusinessImagesBtn.disabled = !currentBusiness?.id || !hasSelectedBusinessFiles();
+    }
+
+    function updateDocumentsButtonState() {
+        if (!uploadBusinessDocumentsBtn) return;
+        uploadBusinessDocumentsBtn.disabled = !currentBusiness?.id || !hasSelectedBusinessDocuments();
     }
 
     function renderSelectedImagePreview(input, container, fallbackText, isSquare) {
@@ -740,6 +883,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (businessPhotosInput) businessPhotosInput.value = "";
     }
 
+    function clearBusinessDocumentInputs() {
+        if (rucDocumentInput) rucDocumentInput.value = "";
+        if (permitDocumentInput) permitDocumentInput.value = "";
+        if (extraDocumentInput) extraDocumentInput.value = "";
+    }
+
     function buildImageUrl(url) {
         if (!url) return "";
         if (url.startsWith("http")) return url;
@@ -759,6 +908,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function logout() {
         localStorage.removeItem("uniplace_token");
         localStorage.removeItem("uniplace_user");
+        localStorage.removeItem("uniplace_remember_me");
         window.location.href = "auth.html";
     }
 

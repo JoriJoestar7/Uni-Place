@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabButtons = document.querySelectorAll(".tab-btn");
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
+    const rememberMeInput = document.getElementById("rememberMe");
 
     const loginMessage = document.getElementById("loginMessage");
     const registerMessage = document.getElementById("registerMessage");
@@ -43,6 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value.trim();
+    const rememberMe = Boolean(rememberMeInput?.checked);
 
     if (!email || !password) {
         showMessage(loginMessage, "Completa todos los campos para continuar.");
@@ -57,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, rememberMe })
         });
 
         const data = await response.json();
@@ -68,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (data.requiresVerification === true) {
                 localStorage.removeItem("uniplace_token");
                 localStorage.removeItem("uniplace_user");
+                localStorage.removeItem("uniplace_remember_me");
                 localStorage.setItem("uniplace_pending_email", data.email || email);
 
                 showMessage(loginMessage, "Debes verificar tu correo. Redirigiendo...");
@@ -87,6 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         localStorage.setItem("uniplace_token", data.token);
         localStorage.setItem("uniplace_user", JSON.stringify(data.user));
+        localStorage.setItem("uniplace_remember_me", rememberMe ? "1" : "0");
 
         showMessage(loginMessage, "Acceso correcto. Redirigiendo...", true);
 
@@ -146,6 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 localStorage.removeItem("uniplace_token");
 localStorage.removeItem("uniplace_user");
+localStorage.removeItem("uniplace_remember_me");
 localStorage.setItem("uniplace_pending_email", data.email || email);
 
 showMessage(registerMessage, "Cuenta creada. Revisa tu correo para verificarla...", true);

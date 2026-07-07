@@ -1,7 +1,13 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
 import { pool } from "../db.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
-import { uploadBusinessImages, getPublicUploadUrl } from "../middleware/upload.middleware.js";
+import {
+    uploadBusinessImages,
+    uploadBusinessDocuments,
+    getPublicUploadUrl
+} from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -14,6 +20,8 @@ const DAYS = [
     "saturday",
     "sunday"
 ];
+
+const DOCUMENTS_ROOT = path.join(process.cwd(), "public/uploads/businesses/documents");
 
 router.get("/me", verifyToken, async (req, res) => {
     try {
@@ -38,6 +46,68 @@ router.get("/me", verifyToken, async (req, res) => {
             ok: false,
             message: "Error al obtener el emprendimiento.",
             error: error.message
+        });
+    }
+});
+
+router.get("/map", verifyToken, async (req, res) => {
+    try {
+        const [rows] = await pool.execute(`
+            SELECT
+                b.id,
+                b.business_name,
+                b.slug,
+                b.business_type,
+                b.category_label,
+                b.short_description,
+                b.description,
+                b.city,
+                b.address,
+                b.campus_zone,
+                b.reference_point,
+                b.whatsapp,
+                b.phone,
+                b.instagram_url,
+                b.website_url,
+                b.price_min,
+                b.price_max,
+                b.schedule_summary,
+                b.is_ai_visible,
+                b.status,
+                k.knowledge_status,
+                k.priority_score
+            FROM businesses b
+            LEFT JOIN business_ai_knowledge k ON k.business_id = b.id
+            WHERE b.status = 'approved'
+              AND b.is_ai_visible = 1
+              AND (k.knowledge_status = 'active' OR k.knowledge_status IS NULL)
+            ORDER BY k.priority_score DESC, b.updated_at DESC
+            LIMIT 80
+        `);
+
+        const businesses = rows
+            .filter(isInsideLaMariscal)
+            .map(toMapBusiness);
+
+        return res.json({
+            ok: true,
+            zone: {
+                name: "La Mariscal",
+                city: "Quito",
+                center: {
+                    lat: -0.2009,
+                    lng: -78.4898
+                }
+            },
+            businesses
+        });
+
+    } catch (error) {
+        console.error("BUSINESS_MAP_ERROR:", error);
+
+        return res.status(500).json({
+            ok: false,
+            message: "Error al cargar el mapa de emprendimientos."
         });
     }
 });
@@ -392,6 +462,92 @@ router.patch(
     }
 );
 
+router.patch(
+    "/me/documents",
+    verifyToken,
+    uploadBusinessDocuments.fields([
+        { name: "rucDocument", maxCount: 1 },
+        { name: "permitDocument", maxCount: 1 },
+        { name: "extraDocument", maxCount: 1 }
+    ]),
+    async (req, res) => {
+        const connection = await pool.getConnection();
+
+        try {
+            if (req.user.role !== "entrepreneur") {
+                return res.status(403).json({
+                    ok: false,
+                    message: "Solo las cuentas de emprendimiento pueden subir documentos."
+                });
+            }
+
+            const [businesses] = await connection.execute(
+                "SELECT id FROM businesses WHERE owner_user_id = ? LIMIT 1",
+                [req.user.id]
+            );
+
+            if (businesses.length === 0) {
+                return res.status(404).json({
+                    ok: false,
+                    message: "Primero debes registrar la ficha de tu emprendimiento."
+                });
+            }
+
+            const uploadedFiles = [
+                ...(req.files?.rucDocument || []).map((file) => toDocumentRecord(file, "ruc")),
+                ...(req.files?.permitDocument || []).map((file) => toDocumentRecord(file, "permit")),
+                ...(req.files?.extraDocument || []).map((file) => toDocumentRecord(file, "extra"))
+            ];
+
+            if (uploadedFiles.length === 0) {
+                return res.status(400).json({
+                    ok: false,
+                    message: "Sube al menos un documento para revisión."
+                });
+            }
+
+            const businessId = businesses[0].id;
+
+            await connection.beginTransaction();
+
+            await saveBusinessDocuments(connection, businessId, uploadedFiles);
+
+            await connection.execute(
+                `UPDATE businesses
+                 SET status = 'pending',
+                     is_ai_visible = 0,
+                     rejection_reason = NULL,
+                     rejected_at = NULL,
+                     resubmitted_at = CURRENT_TIMESTAMP
+                 WHERE id = ?`,
+                [businessId]
+            );
+
+            await connection.commit();
+
+            const business = await getBusinessProfileById(businessId);
+
+            return res.json({
+                ok: true,
+                message: "Documentos subidos correctamente. El emprendimiento quedó pendiente de revisión.",
+                business
+            });
+
+        } catch (error) {
+            await connection.rollback();
+
+            console.error("BUSINESS_DOCUMENTS_ERROR:", error);
+
+            return res.status(500).json({
+                ok: false,
+                message: "Error al subir documentos del emprendimiento."
+            });
+        } finally {
+            connection.release();
+        }
+    }
+);
+
 router.delete("/me/photos/:photoId", verifyToken, async (req, res) => {
     try {
         if (req.user.role !== "entrepreneur") {
@@ -514,8 +670,126 @@ async function enrichBusinessProfile(business) {
         hours,
         faqs,
         photos,
+        documents: await getBusinessDocuments(business.id),
         ai_knowledge: knowledgeRows[0] || null
     };
+}
+
+function toDocumentRecord(file, type) {
+    return {
+        type,
+        label: getDocumentLabel(type),
+        original_name: file.originalname,
+        file_url: getPublicUploadUrl(file),
+        mime_type: file.mimetype,
+        size: file.size,
+        uploaded_at: new Date().toISOString()
+    };
+}
+
+function getDocumentLabel(type) {
+    const labels = {
+        ruc: "RUC",
+        permit: "Permiso o patente",
+        extra: "Documento adicional"
+    };
+
+    return labels[type] || "Documento";
+}
+
+async function saveBusinessDocuments(connection, businessId, documents) {
+    try {
+        for (const document of documents) {
+            await connection.execute(
+                `INSERT INTO business_documents (
+                    business_id,
+                    document_type,
+                    document_label,
+                    original_name,
+                    file_url,
+                    mime_type,
+                    file_size,
+                    uploaded_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                [
+                    businessId,
+                    document.type,
+                    document.label,
+                    document.original_name,
+                    document.file_url,
+                    document.mime_type,
+                    document.size
+                ]
+            );
+        }
+    } catch (error) {
+        if (!isMissingBusinessDocumentsTable(error)) {
+            throw error;
+        }
+
+        saveBusinessDocumentsManifest(businessId, documents);
+    }
+}
+
+async function getBusinessDocuments(businessId) {
+    try {
+        const [rows] = await pool.execute(
+            `SELECT
+                id,
+                document_type AS type,
+                document_label AS label,
+                original_name,
+                file_url,
+                mime_type,
+                file_size AS size,
+                uploaded_at
+             FROM business_documents
+             WHERE business_id = ?
+             ORDER BY uploaded_at DESC, id DESC`,
+            [businessId]
+        );
+
+        return rows;
+    } catch (error) {
+        if (!isMissingBusinessDocumentsTable(error)) {
+            throw error;
+        }
+
+        return readBusinessDocumentsManifest(businessId);
+    }
+}
+
+function saveBusinessDocumentsManifest(businessId, documents) {
+    fs.mkdirSync(DOCUMENTS_ROOT, { recursive: true });
+
+    const manifestPath = getBusinessDocumentsManifestPath(businessId);
+    const existing = readBusinessDocumentsManifest(businessId);
+    const next = [...documents, ...existing].slice(0, 20);
+
+    fs.writeFileSync(manifestPath, JSON.stringify(next, null, 2), "utf8");
+}
+
+function readBusinessDocumentsManifest(businessId) {
+    const manifestPath = getBusinessDocumentsManifestPath(businessId);
+
+    if (!fs.existsSync(manifestPath)) {
+        return [];
+    }
+
+    try {
+        return JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    } catch {
+        return [];
+    }
+}
+
+function getBusinessDocumentsManifestPath(businessId) {
+    return path.join(DOCUMENTS_ROOT, `business-${businessId}.json`);
+}
+
+function isMissingBusinessDocumentsTable(error) {
+    return String(error?.message || "").includes("business_documents")
+        || error?.code === "ER_NO_SUCH_TABLE";
 }
 
 function normalizeBusinessPayload(body) {
@@ -595,6 +869,103 @@ function validateBusinessPayload(payload) {
     }
 
     return null;
+}
+
+function isInsideLaMariscal(business) {
+    const locationText = normalizeForSearch([
+        business.city,
+        business.address,
+        business.campus_zone,
+        business.reference_point,
+        business.description,
+        business.short_description
+    ].filter(Boolean).join(" "));
+
+    const cityIsQuito = !business.city || normalizeForSearch(business.city).includes("quito");
+    const mariscalSignals = [
+        "mariscal",
+        "foch",
+        "amazonas",
+        "colon",
+        "reina victoria",
+        "juan leon mera",
+        "6 de diciembre",
+        "seis de diciembre",
+        "wilson",
+        "veintimilla",
+        "lizardo garcia",
+        "la pinta",
+        "calama",
+        "robles"
+    ];
+
+    return cityIsQuito && mariscalSignals.some((signal) => locationText.includes(signal));
+}
+
+function toMapBusiness(business) {
+    const coordinates = getStableLaMariscalCoordinates(business);
+
+    return {
+        id: business.id,
+        business_name: business.business_name,
+        category: business.category_label || business.business_type || "Emprendimiento",
+        description: business.short_description || createShortDescription(business.description || ""),
+        city: business.city,
+        address: business.address,
+        campus_zone: business.campus_zone,
+        reference_point: business.reference_point,
+        whatsapp: business.whatsapp,
+        phone: business.phone,
+        instagram_url: business.instagram_url,
+        website_url: business.website_url,
+        price_range: formatPriceRange(business.price_min, business.price_max),
+        schedule_summary: business.schedule_summary,
+        knowledge_status: business.knowledge_status || "active",
+        priority_score: business.priority_score || 70,
+        lat: coordinates.lat,
+        lng: coordinates.lng
+    };
+}
+
+function getStableLaMariscalCoordinates(business) {
+    const bounds = {
+        north: -0.1908,
+        south: -0.2116,
+        west: -78.4986,
+        east: -78.4810
+    };
+
+    const seed = String([
+        business.id,
+        business.business_name,
+        business.address,
+        business.campus_zone
+    ].filter(Boolean).join("|"));
+
+    let hash = 0;
+
+    for (let index = 0; index < seed.length; index++) {
+        hash = ((hash << 5) - hash) + seed.charCodeAt(index);
+        hash |= 0;
+    }
+
+    const latRatio = Math.abs(hash % 1000) / 1000;
+    const lngRatio = Math.abs(Math.floor(hash / 1000) % 1000) / 1000;
+
+    return {
+        lat: Number((bounds.south + ((bounds.north - bounds.south) * latRatio)).toFixed(6)),
+        lng: Number((bounds.west + ((bounds.east - bounds.west) * lngRatio)).toFixed(6))
+    };
+}
+
+function normalizeForSearch(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9ñ\s@.]/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 function normalizeMenuItem(item) {

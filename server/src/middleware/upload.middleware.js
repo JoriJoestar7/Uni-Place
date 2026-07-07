@@ -64,6 +64,18 @@ const businessStorage = multer.diskStorage({
     }
 });
 
+const businessDocumentStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = path.join(UPLOADS_ROOT, "businesses/documents");
+        ensureDir(uploadPath);
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        const { name, extension } = sanitizeName(file.originalname);
+        cb(null, `${file.fieldname}-${req.user.id}-${Date.now()}-${name}${extension}`);
+    }
+});
+
 export const uploadAvatar = multer({
     storage: avatarStorage,
     fileFilter: imageFileFilter,
@@ -78,6 +90,28 @@ export const uploadBusinessImages = multer({
     limits: {
         fileSize: 4 * 1024 * 1024,
         files: 8
+    }
+});
+
+export const uploadBusinessDocuments = multer({
+    storage: businessDocumentStorage,
+    fileFilter: (req, file, cb) => {
+        const allowedDocumentTypes = [
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
+
+        if (!allowedDocumentTypes.includes(file.mimetype)) {
+            return cb(new Error("Solo se permiten documentos PDF o imágenes JPG, PNG o WEBP."));
+        }
+
+        cb(null, true);
+    },
+    limits: {
+        fileSize: 8 * 1024 * 1024,
+        files: 3
     }
 });
 

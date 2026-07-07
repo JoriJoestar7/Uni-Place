@@ -1,0 +1,76 @@
+REQUISITOS DE INSTALACION - UNIPLACE
+
+1. Software necesario
+- Node.js 18 o superior.
+- npm.
+- MySQL 8 o compatible.
+- Un servidor SMTP para verificacion de correo y recuperacion de contrasena.
+- Una clave de Gemini API para el asistente con IA.
+- Navegador moderno para abrir el frontend.
+
+2. Instalacion del backend
+- Entrar a la carpeta server.
+- Ejecutar: npm install
+- Ejecutar en desarrollo: npm run dev
+- Ejecutar en produccion/local simple: npm start
+
+3. Variables requeridas en server/.env
+- PORT
+- FRONTEND_URL
+- DB_HOST
+- DB_PORT
+- DB_USER
+- DB_PASSWORD
+- DB_NAME
+- GEMINI_API_KEY
+- GEMINI_MODEL
+- JWT_SECRET
+- JWT_EXPIRES_IN
+- JWT_REMEMBER_EXPIRES_IN
+- BCRYPT_SALT_ROUNDS
+- MAIL_HOST
+- MAIL_PORT
+- MAIL_SECURE
+- MAIL_USER
+- MAIL_PASS
+- MAIL_FROM
+- VERIFICATION_CODE_MINUTES
+- PASSWORD_RESET_CODE_MINUTES
+- SUPPORT_EMAIL
+
+4. Dependencias principales del backend
+- @google/genai
+- bcryptjs
+- cors
+- dotenv
+- express
+- jsonwebtoken
+- multer
+- mysql2
+- nodemailer
+
+5. Base de datos
+- La aplicacion espera una base MySQL configurada en DB_NAME.
+- Deben existir las tablas de usuarios, negocios, conocimiento IA, horarios, productos, FAQs y fotos.
+- Para documentos de validacion se recomienda crear una tabla business_documents con campos equivalentes a:
+  business_id, document_type, document_label, original_name, file_url, mime_type, file_size, uploaded_at.
+- Si esa tabla no existe, UniPlace guarda temporalmente un manifiesto JSON local dentro de public/uploads/businesses/documents.
+
+6. Archivos subidos
+- Avatares: server/public/uploads/avatars
+- Imagenes de emprendimientos: server/public/uploads/businesses
+- Documentos de validacion: server/public/uploads/businesses/documents
+
+7. Frontend
+- El frontend actual usa HTML, CSS y JavaScript sin build step.
+- Para desarrollo local puedes abrirlo con Live Server o servirlo desde http://127.0.0.1:5500.
+- El backend permite por defecto http://127.0.0.1:5500 y http://localhost:5500.
+
+8. Recomendaciones antes de produccion
+- Usar HTTPS.
+- Cambiar JWT_SECRET por una clave larga y privada.
+- Configurar FRONTEND_URL con el dominio real.
+- No subir server/.env a GitHub.
+- Revisar permisos de archivos subidos.
+- Crear la tabla business_documents para guardar documentos en base de datos.
+- Usar almacenamiento privado para RUC/permisos si la aplicacion maneja informacion sensible real.

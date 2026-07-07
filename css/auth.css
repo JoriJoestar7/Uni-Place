@@ -244,3 +244,23 @@
     color: #ffffff;
     font-weight: 800;
 }
+
+.remember-row {
+    width: fit-content;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 10px !important;
+    color: rgba(255, 255, 255, 0.72) !important;
+    cursor: pointer;
+}
+
+.remember-row input {
+    width: 18px !important;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+.remember-row span {
+    font-size: 0.7rem;
+    line-height: 1.4;
+}

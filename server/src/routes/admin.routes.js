@@ -1,10 +1,13 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
 import { pool } from "../db.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 const validStatuses = ["pending", "approved", "rejected", "hidden"];
+const DOCUMENTS_ROOT = path.join(process.cwd(), "public/uploads/businesses/documents");
 
 router.use(verifyToken);
 router.use(requireAdmin);
@@ -113,6 +116,21 @@ router.patch("/businesses/:id/status", async (req, res) => {
                 ok: false,
                 message: "Emprendimiento no encontrado."
             });
+        }
+
+        if (status === "approved") {
+            const documents = await getBusinessDocuments(id);
+            const hasRuc = documents.some((document) => document.type === "ruc");
+            const hasPermit = documents.some((document) => document.type === "permit");
+
+            if (!hasRuc || !hasPermit) {
+                await connection.rollback();
+
+                return res.status(400).json({
+                    ok: false,
+                    message: "Para aprobar un emprendimiento debes revisar que tenga RUC y permiso/patente cargados."
+                });
+            }
         }
 
         const statusConfig = getStatusConfig(status, rejectionReason);
@@ -299,11 +317,51 @@ async function enrichBusinesses(businesses) {
             menu_items: menuItems,
             hours,
             faqs,
-            photos
+            photos,
+            documents: await getBusinessDocuments(business.id)
         });
     }
 
     return enriched;
+}
+
+async function getBusinessDocuments(businessId) {
+    try {
+        const [rows] = await pool.execute(
+            `SELECT
+                id,
+                document_type AS type,
+                document_label AS label,
+                original_name,
+                file_url,
+                mime_type,
+                file_size AS size,
+                uploaded_at
+             FROM business_documents
+             WHERE business_id = ?
+             ORDER BY uploaded_at DESC, id DESC`,
+            [businessId]
+        );
+
+        return rows;
+    } catch (error) {
+        if (!String(error?.message || "").includes("business_documents")
+            && error?.code !== "ER_NO_SUCH_TABLE") {
+            throw error;
+        }
+
+        const manifestPath = path.join(DOCUMENTS_ROOT, `business-${businessId}.json`);
+
+        if (!fs.existsSync(manifestPath)) {
+            return [];
+        }
+
+        try {
+            return JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+        } catch {
+            return [];
+        }
+    }
 }
 
 function getStatusConfig(status, rejectionReason) {

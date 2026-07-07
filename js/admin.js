@@ -52,6 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutBtn.addEventListener("click", () => {
         localStorage.removeItem("uniplace_token");
         localStorage.removeItem("uniplace_user");
+        localStorage.removeItem("uniplace_remember_me");
         window.location.href = "auth.html";
     });
 
@@ -220,6 +221,11 @@ document.addEventListener("DOMContentLoaded", () => {
                             ${renderBusinessGallery(business.photos)}
                         </section>
 
+                        <section>
+                            <h3>Documentos de validación</h3>
+                            ${renderBusinessDocuments(business.documents)}
+                        </section>
+
                         <section class="knowledge-preview">
                             <h3>Base de conocimiento IA</h3>
                             <pre>${escapeHtml(business.knowledge_text || "Aún no se generó conocimiento para IA.")}</pre>
@@ -325,6 +331,23 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="admin-business-gallery">
                 ${photos.map((photo) => `
                     <img src="${escapeHtml(buildImageUrl(photo.image_url))}" alt="Foto del emprendimiento">
+                `).join("")}
+            </div>
+        `;
+    }
+
+    function renderBusinessDocuments(documents = []) {
+        if (!documents || documents.length === 0) {
+            return `<p class="admin-empty-small">No hay RUC ni permisos cargados.</p>`;
+        }
+
+        return `
+            <div class="admin-document-list">
+                ${documents.map((document) => `
+                    <a href="${escapeHtml(buildImageUrl(document.file_url))}" target="_blank" rel="noopener">
+                        <strong>${escapeHtml(document.label || document.type || "Documento")}</strong>
+                        <span>${escapeHtml(document.original_name || "Archivo cargado")}</span>
+                    </a>
                 `).join("")}
             </div>
         `;
