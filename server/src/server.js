@@ -21,7 +21,7 @@ const configuredOrigins = [
     .filter(Boolean);
 
 const defaultLocalOrigins = [
-    "https://uniplace-web.vercel.app/"
+    "https://uniplace.up.railway.app/api"
 ];
 
 app.use(cors({
@@ -95,7 +95,7 @@ async function startServer() {
         await initializeDatabase();
 
         app.listen(PORT, () => {
-            console.log(`UniPlace API corriendo en http://localhost:${PORT}`);
+            console.log(`UniPlace API corriendo en https://uniplace-web.vercel.app/`);
         });
     } catch (error) {
         console.error("DATABASE_INITIALIZATION_ERROR:", error);

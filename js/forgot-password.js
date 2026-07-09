@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const API_URL = window.UNIPLACE_CONFIG?.apiBaseUrl || "https://uniplace-web.vercel.app/";
+    const API_URL = window.UNIPLACE_CONFIG?.apiBaseUrl || "https://uniplace.up.railway.app/api";
 
     const cursorGlow = document.querySelector(".cursor-glow");
 

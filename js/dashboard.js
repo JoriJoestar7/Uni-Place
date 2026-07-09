@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const API_URL = window.UNIPLACE_CONFIG?.apiBaseUrl || "https://uniplace-web.vercel.app/";
-    const API_BASE_URL = window.UNIPLACE_CONFIG?.serverBaseUrl || "https://uniplace-web.vercel.app/";
+    const API_URL = window.UNIPLACE_CONFIG?.apiBaseUrl || "https://uniplace.up.railway.app/api";
+    const API_BASE_URL = window.UNIPLACE_CONFIG?.serverBaseUrl || "https://uniplace.up.railway.app/api";
     const STORAGE_KEY = "uniplace_conversations";
 
     const token = localStorage.getItem("uniplace_token");
