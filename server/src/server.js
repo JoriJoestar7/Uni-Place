@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { pool } from "./db.js";
+import { initializeDatabase } from "./database/initialize.js";
 import authRoutes from "./routes/auth.routes.js";
 import businessRoutes from "./routes/business.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -66,7 +67,7 @@ app.get("/", (req, res) => {
 
 app.get("/api/health", async (req, res) => {
     try {
-        await pool.execute("SELECT 1");
+        await pool.execute("SELECT 1 FROM users LIMIT 1");
 
         return res.json({
             ok: true,
@@ -90,6 +91,17 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/chat", chatRoutes);
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-    console.log(`UniPlace API corriendo en http://localhost:${PORT}`);
-});
+async function startServer() {
+    try {
+        await initializeDatabase();
+
+        app.listen(PORT, () => {
+            console.log(`UniPlace API corriendo en http://localhost:${PORT}`);
+        });
+    } catch (error) {
+        console.error("DATABASE_INITIALIZATION_ERROR:", error);
+        process.exit(1);
+    }
+}
+
+startServer();
