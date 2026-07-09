@@ -28,10 +28,7 @@ async function createTransporter() {
 }
 
 export async function sendVerificationEmail({ to, name, code }) {
-    const transporter = await createTransporter();
-
-    await transporter.sendMail({
-        from: process.env.MAIL_FROM || `"UniPlace" <${process.env.MAIL_USER}>`,
+    await sendMail({
         to,
         subject: "Verifica tu cuenta en UniPlace",
         text: `
@@ -69,10 +66,7 @@ Si tú no solicitaste este registro, puedes ignorar este correo.
     });
 }
 export async function sendPasswordResetEmail({ to, name, code }) {
-    const transporter = await createTransporter();
-
-    await transporter.sendMail({
-        from: process.env.MAIL_FROM || `"UniPlace" <${process.env.MAIL_USER}>`,
+    await sendMail({
         to,
         subject: "Recupera tu contraseña en UniPlace",
         text: `
@@ -111,12 +105,9 @@ Si tú no solicitaste este cambio, puedes ignorar este correo.
 }
 
 export async function sendPasswordChangedEmail({ to, name }) {
-    const transporter = await createTransporter();
-
     const supportEmail = process.env.SUPPORT_EMAIL || process.env.MAIL_USER;
 
-    await transporter.sendMail({
-        from: process.env.MAIL_FROM || `"UniPlace" <${process.env.MAIL_USER}>`,
+    await sendMail({
         to,
         subject: "Tu contraseña de UniPlace fue actualizada",
         text: `
@@ -165,6 +156,50 @@ Por seguridad, evita compartir tus credenciales con otras personas.
             </div>
         `
     });
+}
+
+async function sendMail(message) {
+    if (process.env.RESEND_API_KEY) {
+        return sendWithResend(message);
+    }
+
+    const transporter = await createTransporter();
+
+    return transporter.sendMail({
+        from: getSender(),
+        ...message
+    });
+}
+
+async function sendWithResend(message) {
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            from: getSender(),
+            to: [message.to],
+            subject: message.subject,
+            text: message.text,
+            html: message.html
+        })
+    });
+
+    if (!response.ok) {
+        const details = await response.text();
+        throw new Error(`Resend rechazó el correo (${response.status}): ${details}`);
+    }
+
+    return response.json();
+}
+
+function getSender() {
+    return process.env.MAIL_FROM
+        || (process.env.MAIL_USER
+            ? `"UniPlace" <${process.env.MAIL_USER}>`
+            : "UniPlace <onboarding@resend.dev>");
 }
 
 async function resolveIpv4Host(host) {
