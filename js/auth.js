@@ -100,7 +100,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (error) {
         console.error("LOGIN_FRONT_ERROR:", error);
-        showMessage(loginMessage, "No se pudo conectar con el servidor.");
+        showMessage(
+            loginMessage,
+            error.name === "AbortError"
+                ? "El servidor tardó demasiado en responder. Intenta otra vez en unos segundos."
+                : "No se pudo conectar con el servidor."
+        );
     } finally {
         setLoading(loginForm, false);
     }
@@ -133,15 +138,13 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             setLoading(registerForm, true);
 
-            const response = await fetch(`${API_URL}/auth/register`, {
+            const { response, data } = await fetchJsonWithTimeout(`${API_URL}/auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ name, email, password, role })
-            });
-
-            const data = await response.json();
+            }, 30000);
 
             if (!response.ok || !data.ok) {
                 showMessage(registerMessage, data.message || "No se pudo crear la cuenta.");
@@ -161,11 +164,40 @@ setTimeout(() => {
 
         } catch (error) {
             console.error("REGISTER_FRONT_ERROR:", error);
-            showMessage(registerMessage, "No se pudo conectar con el servidor.");
+            showMessage(
+                registerMessage,
+                error.name === "AbortError"
+                    ? "El servidor tardó demasiado al crear la cuenta. Revisa Railway/logs o intenta de nuevo en unos segundos."
+                    : "No se pudo conectar con el servidor."
+            );
         } finally {
             setLoading(registerForm, false);
         }
     });
+
+    async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 25000) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
+
+            const contentType = response.headers.get("content-type") || "";
+            const data = contentType.includes("application/json")
+                ? await response.json()
+                : {
+                    ok: false,
+                    message: (await response.text()) || "Respuesta no válida del servidor."
+                };
+
+            return { response, data };
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
 
     function saveSession(data) {
         localStorage.setItem("uniplace_token", data.token);
