@@ -12,6 +12,9 @@ async function createTransporter() {
 
     const mailHost = process.env.MAIL_HOST || "smtp.gmail.com";
     const resolvedHost = await resolveIpv4Host(mailHost);
+    const connectionTimeout = Number(process.env.MAIL_CONNECTION_TIMEOUT_MS) || 10000;
+    const greetingTimeout = Number(process.env.MAIL_GREETING_TIMEOUT_MS) || 10000;
+    const socketTimeout = Number(process.env.MAIL_SOCKET_TIMEOUT_MS) || 15000;
 
     return nodemailer.createTransport({
         host: resolvedHost,
@@ -23,7 +26,10 @@ async function createTransporter() {
         },
         tls: {
             servername: mailHost
-        }
+        },
+        connectionTimeout,
+        greetingTimeout,
+        socketTimeout
     });
 }
 
@@ -165,28 +171,45 @@ async function sendMail(message) {
 
     const transporter = await createTransporter();
 
-    return transporter.sendMail({
-        from: getSender(),
-        ...message
-    });
+    const timeoutMs = Number(process.env.MAIL_SEND_TIMEOUT_MS) || 15000;
+
+    return withTimeout(
+        transporter.sendMail({
+            from: getSender(),
+            ...message
+        }),
+        timeoutMs,
+        "El servicio de correo tardó demasiado en responder."
+    );
 }
 
 async function sendWithResend(message) {
-    const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-            "Content-Type": "application/json",
-            "User-Agent": "uniplace/1.0"
-        },
-        body: JSON.stringify({
-            from: getSender(),
-            to: [message.to],
-            subject: message.subject,
-            text: message.text,
-            html: message.html
-        })
-    });
+    const controller = new AbortController();
+    const timeoutMs = Number(process.env.MAIL_SEND_TIMEOUT_MS) || 15000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    let response;
+
+    try {
+        response = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+                "Content-Type": "application/json",
+                "User-Agent": "uniplace/1.0"
+            },
+            body: JSON.stringify({
+                from: getSender(),
+                to: [message.to],
+                subject: message.subject,
+                text: message.text,
+                html: message.html
+            }),
+            signal: controller.signal
+        });
+    } finally {
+        clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
         const details = await response.text();
@@ -208,11 +231,30 @@ async function resolveIpv4Host(host) {
         return host;
     }
 
-    const addresses = await dns.resolve4(host);
+    const addresses = await withTimeout(
+        dns.resolve4(host),
+        Number(process.env.MAIL_DNS_TIMEOUT_MS) || 8000,
+        `El DNS del servicio de correo tardó demasiado en resolver ${host}.`
+    );
 
     if (addresses.length === 0) {
         throw new Error(`No se encontró una dirección IPv4 para ${host}.`);
     }
 
     return addresses[0];
+}
+
+
+function withTimeout(promise, ms, message) {
+    let timeoutId;
+
+    const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+            reject(new Error(message));
+        }, ms);
+    });
+
+    return Promise.race([promise, timeoutPromise]).finally(() => {
+        clearTimeout(timeoutId);
+    });
 }
