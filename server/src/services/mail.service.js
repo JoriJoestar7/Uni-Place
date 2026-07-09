@@ -1,26 +1,34 @@
 import dotenv from "dotenv";
+import dns from "node:dns/promises";
+import net from "node:net";
 import nodemailer from "nodemailer";
 
 dotenv.config();
 
-function createTransporter() {
+async function createTransporter() {
     if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
         throw new Error("Faltan MAIL_USER o MAIL_PASS en el archivo .env");
     }
 
+    const mailHost = process.env.MAIL_HOST || "smtp.gmail.com";
+    const resolvedHost = await resolveIpv4Host(mailHost);
+
     return nodemailer.createTransport({
-        host: process.env.MAIL_HOST || "smtp.gmail.com",
+        host: resolvedHost,
         port: Number(process.env.MAIL_PORT) || 465,
         secure: String(process.env.MAIL_SECURE) === "true",
         auth: {
             user: process.env.MAIL_USER,
             pass: process.env.MAIL_PASS
+        },
+        tls: {
+            servername: mailHost
         }
     });
 }
 
 export async function sendVerificationEmail({ to, name, code }) {
-    const transporter = createTransporter();
+    const transporter = await createTransporter();
 
     await transporter.sendMail({
         from: process.env.MAIL_FROM || `"UniPlace" <${process.env.MAIL_USER}>`,
@@ -61,7 +69,7 @@ Si tú no solicitaste este registro, puedes ignorar este correo.
     });
 }
 export async function sendPasswordResetEmail({ to, name, code }) {
-    const transporter = createTransporter();
+    const transporter = await createTransporter();
 
     await transporter.sendMail({
         from: process.env.MAIL_FROM || `"UniPlace" <${process.env.MAIL_USER}>`,
@@ -103,7 +111,7 @@ Si tú no solicitaste este cambio, puedes ignorar este correo.
 }
 
 export async function sendPasswordChangedEmail({ to, name }) {
-    const transporter = createTransporter();
+    const transporter = await createTransporter();
 
     const supportEmail = process.env.SUPPORT_EMAIL || process.env.MAIL_USER;
 
@@ -157,4 +165,18 @@ Por seguridad, evita compartir tus credenciales con otras personas.
             </div>
         `
     });
+}
+
+async function resolveIpv4Host(host) {
+    if (net.isIP(host)) {
+        return host;
+    }
+
+    const addresses = await dns.resolve4(host);
+
+    if (addresses.length === 0) {
+        throw new Error(`No se encontró una dirección IPv4 para ${host}.`);
+    }
+
+    return addresses[0];
 }
