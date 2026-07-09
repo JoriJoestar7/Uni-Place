@@ -1,0 +1,7 @@
+server/
+database/
+package.json
+node_modules/
+.agents/
+DEPLOY.md
+REQUISITOS_INSTALACION.txt
