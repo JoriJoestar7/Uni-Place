@@ -176,7 +176,8 @@ async function sendWithResend(message) {
         method: "POST",
         headers: {
             Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "User-Agent": "uniplace/1.0"
         },
         body: JSON.stringify({
             from: getSender(),
