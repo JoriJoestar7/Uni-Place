@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const API_URL = "https://uniplace.up.railway.app/api";
+    const API_URL = window.UNIPLACE_CONFIG?.apiBaseUrl || "https://uniplace.up.railway.app/api";
 
     const cursorGlow = document.querySelector(".cursor-glow");
     const verifyForm = document.getElementById("verifyForm");
