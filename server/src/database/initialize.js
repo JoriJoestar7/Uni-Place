@@ -10,7 +10,7 @@ const schemaStatements = [
         role ENUM('student', 'professor', 'entrepreneur', 'admin') NOT NULL DEFAULT 'student',
         phone VARCHAR(40) NULL,
         bio TEXT NULL,
-        avatar_url VARCHAR(500) NULL,
+        avatar_url LONGTEXT NULL,
         email_verified TINYINT(1) NOT NULL DEFAULT 0,
         verification_code_hash VARCHAR(255) NULL,
         verification_code_expires_at DATETIME NULL,
@@ -101,6 +101,7 @@ const schemaStatements = [
         closing_time TIME NULL,
         is_closed TINYINT(1) NOT NULL DEFAULT 0,
         notes VARCHAR(255) NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         KEY idx_business_hours_business (business_id),
         CONSTRAINT fk_business_hours_business
             FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
@@ -175,11 +176,19 @@ const schemaStatements = [
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
 ];
 
+const migrationStatements = [
+    `ALTER TABLE users MODIFY avatar_url LONGTEXT NULL`
+];
+
 export async function initializeDatabase() {
     const connection = await pool.getConnection();
 
     try {
         for (const statement of schemaStatements) {
+            await connection.query(statement);
+        }
+
+        for (const statement of migrationStatements) {
             await connection.query(statement);
         }
 

@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const API_URL = window.UNIPLACE_CONFIG?.apiBaseUrl || "https://uniplace.up.railway.app/api";
-    const SERVER_URL = window.UNIPLACE_CONFIG?.serverBaseUrl || "https://uniplace.up.railway.app/api";
+    const SERVER_URL = window.UNIPLACE_CONFIG?.serverBaseUrl || "https://uniplace.up.railway.app";
 
     const token = localStorage.getItem("uniplace_token");
     const userRaw = localStorage.getItem("uniplace_user");
@@ -75,7 +75,7 @@ if (data.user) {
         }
     });
 
-    avatarInput.addEventListener("change", () => {
+    avatarInput.addEventListener("change", async () => {
         const file = avatarInput.files[0];
 
         if (!file) return;
@@ -84,22 +84,29 @@ if (data.user) {
         avatarImage.src = previewUrl;
         avatarImage.style.display = "block";
         avatarInitials.style.display = "none";
+
+        await uploadAvatar(file);
     });
 
-    avatarForm.addEventListener("submit", async (event) => {
+    avatarForm.addEventListener("submit", (event) => {
         event.preventDefault();
+        avatarInput.click();
+    });
 
-        const file = avatarInput.files[0];
+    logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("uniplace_token");
+        localStorage.removeItem("uniplace_user");
+        localStorage.removeItem("uniplace_remember_me");
+        window.location.href = "auth.html";
+    });
 
-        if (!file) {
-            showMessage("Selecciona una imagen primero.");
-            return;
-        }
-
+    async function uploadAvatar(file) {
         const formData = new FormData();
         formData.append("avatar", file);
 
         try {
+            showMessage("Guardando foto de perfil...");
+
             const response = await fetch(`${API_URL}/profile/avatar`, {
                 method: "POST",
                 headers: {
@@ -124,14 +131,7 @@ if (data.user) {
             console.error("AVATAR_UPLOAD_FRONT_ERROR:", error);
             showMessage("No se pudo conectar con el servidor.");
         }
-    });
-
-    logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem("uniplace_token");
-        localStorage.removeItem("uniplace_user");
-        localStorage.removeItem("uniplace_remember_me");
-        window.location.href = "auth.html";
-    });
+    }
 
     async function loadProfile() {
         try {
@@ -173,7 +173,7 @@ if (data.user) {
         avatarInitials.textContent = getInitials(displayName);
 
         if (user.avatar_url) {
-            avatarImage.src = `${SERVER_URL}${user.avatar_url}`;
+            avatarImage.src = buildImageUrl(user.avatar_url);
             avatarImage.style.display = "block";
             avatarInitials.style.display = "none";
         } else {
@@ -181,6 +181,16 @@ if (data.user) {
             avatarImage.style.display = "none";
             avatarInitials.style.display = "block";
         }
+    }
+
+    function buildImageUrl(url) {
+        if (!url) return "";
+
+        if (url.startsWith("data:") || url.startsWith("http")) {
+            return url;
+        }
+
+        return `${SERVER_URL}${url}`;
     }
 
     function updateLocalUser(user) {

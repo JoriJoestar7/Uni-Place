@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const API_URL = window.UNIPLACE_CONFIG?.apiBaseUrl || "https://uniplace.up.railway.app/api";
-    const API_BASE_URL = window.UNIPLACE_CONFIG?.serverBaseUrl || "https://uniplace.up.railway.app/api";
+    const API_BASE_URL = window.UNIPLACE_CONFIG?.serverBaseUrl || "https://uniplace.up.railway.app";
     const STORAGE_KEY = "uniplace_conversations";
 
     const token = localStorage.getItem("uniplace_token");
@@ -658,6 +658,7 @@ function renderUserPanel() {
             chatWindow.appendChild(messageElement);
         });
 
+        bindSourceCardMapLinks();
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
@@ -674,7 +675,13 @@ function renderUserPanel() {
                 : "";
 
             return `
-                <article class="message-source-card">
+                <article
+                    class="message-source-card message-source-card-clickable"
+                    data-source-business-id="${escapeHtml(source.id)}"
+                    role="button"
+                    tabindex="0"
+                    title="Ver este emprendimiento en el mapa"
+                >
                     <div>
                         <strong>${escapeHtml(source.business_name || "Emprendimiento UniPlace")}</strong>
                         <p>${escapeHtml(source.short_description || source.category || "Negocio aprobado dentro de UniPlace.")}</p>
@@ -689,11 +696,39 @@ function renderUserPanel() {
                     </div>
 
                     ${tokens}
+                    <small class="message-source-map-hint">Ver en mapa</small>
                 </article>
             `;
         }).join("");
 
         return `<div class="message-sources">${cards}</div>`;
+    }
+
+    function bindSourceCardMapLinks() {
+        document.querySelectorAll("[data-source-business-id]").forEach((card) => {
+            const businessId = card.dataset.sourceBusinessId;
+
+            const open = () => {
+                if (!businessId) return;
+                openMapAndFocusBusiness(businessId);
+            };
+
+            card.addEventListener("click", open);
+            card.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    open();
+                }
+            });
+        });
+    }
+
+    async function openMapAndFocusBusiness(businessId) {
+        await renderMapView();
+
+        setTimeout(() => {
+            focusMapBusiness(businessId);
+        }, 180);
     }
 
     function formatSourceLocation(source) {
@@ -1397,7 +1432,7 @@ function renderUserPanel() {
     function buildUploadUrl(url) {
     if (!url) return "";
 
-    if (url.startsWith("http")) {
+    if (url.startsWith("data:") || url.startsWith("http")) {
         return url;
     }
 

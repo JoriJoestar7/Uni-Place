@@ -1737,3 +1737,26 @@
         flex-direction: column;
     }
 }
+
+/* =========================
+   Tarjetas recomendadas: acceso directo al mapa
+========================= */
+.message-source-card-clickable {
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.message-source-card-clickable:hover,
+.message-source-card-clickable:focus-visible {
+    background: rgba(0, 5, 92, 0.28);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 14px 42px rgba(0, 5, 92, 0.22);
+    outline: none;
+}
+
+.message-source-map-hint {
+    margin-top: 12px !important;
+    color: #ffffff !important;
+    background: rgba(0, 5, 92, 0.58) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+}

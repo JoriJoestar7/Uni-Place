@@ -1,4 +1,5 @@
 import express from "express";
+import fs from "fs";
 import { pool } from "../db.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
 import { uploadAvatar } from "../middleware/upload.middleware.js";
@@ -129,12 +130,14 @@ router.post("/avatar", uploadAvatar.single("avatar"), async (req, res) => {
             });
         }
 
-        const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+        const avatarUrl = createAvatarDataUrl(req.file);
 
         await pool.execute(
             "UPDATE users SET avatar_url = ? WHERE id = ?",
             [avatarUrl, req.user.id]
         );
+
+        removeTemporaryUpload(req.file.path);
 
         const [users] = await pool.execute(
             `SELECT
@@ -169,6 +172,21 @@ router.post("/avatar", uploadAvatar.single("avatar"), async (req, res) => {
         });
     }
 });
+
+function createAvatarDataUrl(file) {
+    const imageBuffer = fs.readFileSync(file.path);
+    return `data:${file.mimetype};base64,${imageBuffer.toString("base64")}`;
+}
+
+function removeTemporaryUpload(filePath) {
+    if (!filePath) return;
+
+    fs.unlink(filePath, (error) => {
+        if (error) {
+            console.warn("AVATAR_TEMP_DELETE_WARNING:", error.message);
+        }
+    });
+}
 
 function cleanText(value) {
     if (value === undefined || value === null) return null;
